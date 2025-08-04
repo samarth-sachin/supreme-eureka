@@ -3,20 +3,16 @@ grammar SatOps;
 program: statement+ ;
 
 statement
-    : deploySatellite STRING ';'
-    | moveSatellite STRING 'to' coordinates ';'
-    | print STRING ';'
+    : deployStmt                              #deployStatement
+    | moveStmt                                #moveStatement
+    | printStmt                               #printStatement
     ;
 
-print: ' ';
+deployStmt: 'deploy' ID ';';
+moveStmt: 'move' ID 'to' '(' INT ',' INT ')' ';';
+printStmt: 'print' STRING ';';
 
-deploySatellite: 'deploy';
-moveSatellite: 'move';
-
-coordinates: '(' INT ',' INT ')' ;
-
-PRINT: 'print';
-STRING: '"' (~["\r\n])* '"' ;
-INT: [0-9]+ ;
-
-WS: [ \t\r\n]+ -> skip ;
+ID: [a-zA-Z_][a-zA-Z_0-9]*;
+INT: [0-9]+;
+STRING: '"' (~["\r\n])* '"';
+WS: [ \t\r\n]+ -> skip;
