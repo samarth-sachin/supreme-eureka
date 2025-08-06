@@ -10,6 +10,7 @@ public class SatOpsVisitorImpl extends SatOpsBaseVisitor<String> {
     @Override
     public String visitProgram(SatOpsParser.ProgramContext ctx) {
         ctx.statement().forEach(this::visit);
+        System.out.println(output.toString().trim());
         return output.toString().trim();
     }
 

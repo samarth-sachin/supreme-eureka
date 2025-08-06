@@ -3,7 +3,7 @@ grammar SatOps;
 program: statement+ ;
 
 statement
-    : deployStmt                              #deployStatement
+    :deployStmt                              #deployStatement
     | moveStmt                                #moveStatement
     | printStmt                               #printStatement
     ;
