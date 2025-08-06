@@ -1,6 +1,6 @@
 package com.dsl.simulator;
 
-import com.dsl.simulator.Python.PythonBridge;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -11,7 +11,6 @@ public class SatopsDslApplication {
 		SpringApplication.run(SatopsDslApplication.class, args);
 
 
-		String response = PythonBridge.callSayHello("ISRO");
-		System.out.println("Python says: " + response);
+
 	}
 }
