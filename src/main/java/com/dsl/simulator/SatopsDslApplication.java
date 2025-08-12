@@ -1,5 +1,6 @@
 package com.dsl.simulator;
 
+import org.orekit.data.DataContext;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.data.DirectoryCrawler;
 import org.springframework.boot.SpringApplication;
@@ -11,12 +12,13 @@ import java.io.File;
 public class SatopsDslApplication {
 
 	public static void main(String[] args) {
-		// Initialize Orekit data directory
-		File orekitData = new File("src/main/resources/orekit-data");
-		DataProvidersManager manager = DataProvidersManager.getInstance();
+
+		File orekitData = new File("src/main/resources/orekit-data-main");
+
+		DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
 		manager.addProvider(new DirectoryCrawler(orekitData));
 
-		// Start Spring Boot app
 		SpringApplication.run(SatopsDslApplication.class, args);
 	}
 }
+

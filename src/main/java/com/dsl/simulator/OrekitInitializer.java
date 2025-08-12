@@ -6,7 +6,7 @@ import java.io.File;
 public class OrekitInitializer {
     public static void initialize() {
         File orekitData = new File("src/main/resources/orekit-data");
-        DataProvidersManager manager = DataProvidersManager.getInstance();
+        DataProvidersManager manager = new DataProvidersManager();
         manager.addProvider(new DirectoryCrawler(orekitData));
     }
 }
