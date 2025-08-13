@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SatOps DSL Runner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #4cafef;
+        }
+        textarea {
+            width: 500px;
+            height: 200px;
+            padding: 10px;
+            font-size: 14px;
+            border-radius: 8px;
+            border: none;
+            background-color: #1e1e1e;
+            color: #fff;
+            resize: none;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background-color: #4cafef;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #379cd6;
+        }
+        pre {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            width: 500px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+
+<h1>SatOps DSL Runner</h1>
+<textarea id="dslCode" placeholder="Type your DSL code here..."></textarea><br>
+<button onclick="runDSL()">Run</button>
+<pre id="output"></pre>
+
+<script>
+    async function runDSL() {
+        const code = document.getElementById('dslCode').value;
+        try {
+            const response = await fetch('/dsl/run', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain'
+                },
+                body: code
+            });
+            if (!response.ok) {
+                document.getElementById('output').textContent = "Error: " + response.status;
+                return;
+            }
+            const result = await response.text();
+            document.getElementById('output').textContent = result;
+        } catch (err) {
+            document.getElementById('output').textContent = "Error: " + err.message;
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -7,13 +7,21 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.io.File;
+import java.net.URL;
+import java.nio.file.Paths;
 
 @SpringBootApplication
 public class SatopsDslApplication {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 
-		File orekitData = new File("src/main/resources/orekit-data-main");
+
+		URL orekitDataUrl = SatopsDslApplication.class.getClassLoader().getResource("orekit-data-main");
+		if (orekitDataUrl == null) {
+			throw new RuntimeException("Orekit data folder not found in resources!");
+		}
+
+		File orekitData = Paths.get(orekitDataUrl.toURI()).toFile();
 
 		DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
 		manager.addProvider(new DirectoryCrawler(orekitData));
@@ -21,4 +29,3 @@ public class SatopsDslApplication {
 		SpringApplication.run(SatopsDslApplication.class, args);
 	}
 }
-
