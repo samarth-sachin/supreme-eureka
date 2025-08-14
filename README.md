@@ -14,6 +14,8 @@ SatOpsDSL is a backend system that interprets and executes satellite operation c
 ## Example Input
 
 The following script demonstrates a sample mission sequence:
+<img width="1911" height="862" alt="image" src="https://github.com/user-attachments/assets/9ea0fa99-83ab-4dbd-ad60-6c5edb1c561b" />
+
 
 ```plaintext
 deploy sat1;
