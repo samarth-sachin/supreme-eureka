@@ -1,6 +1,6 @@
 package com.dsl.simulator.controller;
 
-import com.dsl.simulator.OrekitInitializer;
+//import com.dsl.simulator.Orekit.OrekitInitializer;
 import com.dsl.simulator.SatOpsLexer;
 import com.dsl.simulator.SatOpsParser;
 import com.dsl.simulator.visitor.SatOpsVisitorImpl;
@@ -16,7 +16,7 @@ public class DslController {
     @PostMapping(value = "/run", consumes = MediaType.TEXT_PLAIN_VALUE)
     public String runDsl(@RequestBody String code) {
 
-        OrekitInitializer.initialize();
+//        OrekitInitializer.initialize();
 
         SatOpsLexer lexer = new SatOpsLexer(CharStreams.fromString(code));
         CommonTokenStream tokens = new CommonTokenStream(lexer);

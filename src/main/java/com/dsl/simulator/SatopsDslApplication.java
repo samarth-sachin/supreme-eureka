@@ -1,5 +1,6 @@
 package com.dsl.simulator;
 
+import com.dsl.simulator.Orekit.SatellitePropagation;
 import org.orekit.data.DataContext;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.data.DirectoryCrawler;
@@ -15,17 +16,21 @@ public class SatopsDslApplication {
 
 	public static void main(String[] args) throws Exception {
 
-
+		// Load Orekit data from resources
 		URL orekitDataUrl = SatopsDslApplication.class.getClassLoader().getResource("orekit-data-main");
 		if (orekitDataUrl == null) {
 			throw new RuntimeException("Orekit data folder not found in resources!");
 		}
 
 		File orekitData = Paths.get(orekitDataUrl.toURI()).toFile();
-
 		DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
 		manager.addProvider(new DirectoryCrawler(orekitData));
 
+		// Run satellite propagation simulation
+		SatellitePropagation propagation = new SatellitePropagation();
+//		propagation.runSimulation();
+
+		// Start Spring Boot
 		SpringApplication.run(SatopsDslApplication.class, args);
 	}
 }
