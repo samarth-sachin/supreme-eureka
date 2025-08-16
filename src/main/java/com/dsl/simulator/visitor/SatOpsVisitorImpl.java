@@ -51,6 +51,23 @@ public class SatOpsVisitorImpl extends SatOpsBaseVisitor<String> {
         output.append("Message: ").append(message).append("\n");
         return null;
     }
+    @Override
+    public String visitSimulateOrbitStatement(SatOpsParser.SimulateOrbitStatementContext ctx) {
+        double sma = Double.parseDouble(ctx.NUMBER(0).getText());
+        double ecc = Double.parseDouble(ctx.NUMBER(1).getText());
+        double inc = Double.parseDouble(ctx.NUMBER(2).getText());
+
+        output.append("Simulating orbit with parameters: ")
+                .append("SMA=").append(sma)
+                .append(", ECC=").append(ecc)
+                .append(", INC=").append(inc).append("\n");
+
+        // call your executor to run Orekit simulation
+        new com.dsl.simulator.Executor.SatOpsExecutor().executeSimulateOrbit(sma, ecc, inc);
+
+        return null;
+    }
+
 }
 
 //package com.dsl.simulator.visitor;
