@@ -1,9 +1,8 @@
 package com.dsl.simulator.controller;
 
-import com.dsl.simulator.visitor.SatOpsVisitor;
-import com.dsl.simulator.visitor.SatOpsVisitorImpl;
 import com.dsl.simulator.SatOpsLexer;
 import com.dsl.simulator.SatOpsParser;
+import com.dsl.simulator.visitor.SatOpsVisitor;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.springframework.web.bind.annotation.*;
@@ -15,21 +14,22 @@ public class DslController {
     @PostMapping("/run")
     public String runDsl(@RequestBody String script) {
         try {
-            // Parse DSL script
             SatOpsLexer lexer = new SatOpsLexer(CharStreams.fromString(script));
             SatOpsParser parser = new SatOpsParser(new CommonTokenStream(lexer));
 
-            // Visit and execute
-//            SatOpsVisitorImpl visitor = new SatOpsVisitorImpl();
-//            return visitor.visitProgram(parser.program()).toString();
-            SatOpsVisitor visitor1=new SatOpsVisitor();
-            return visitor1.visitProgram(parser.program()).toString();
+            SatOpsVisitor visitor = new SatOpsVisitor();
+            visitor.visitProgram(parser.program());
 
+
+            return " DSL executed successfully!\n\n" +
+                    " Satellites: " + visitor.getSatellites().values() + "\n" +
+                    " GroundStations: " + visitor.getGroundStations().values();
         } catch (Exception e) {
-            return "Error executing DSL: " + e.getMessage();
+            return " Error executing DSL: " + e.getMessage();
         }
     }
 }
+
 
 //
 //package com.dsl.simulator.controller;
