@@ -18,8 +18,8 @@ public class SatOpsCustomVisitor extends SatOpsBaseVisitor<Void> {
     @Override
     public Void visitMoveStatement(SatOpsParser.MoveStatementContext ctx) {
         String id = ctx.ID().getText();
-        int x = Integer.parseInt(ctx.INT(0).getText());
-        int y = Integer.parseInt(ctx.INT(1).getText());
+        int x = Integer.parseInt(ctx.NUMBER(0).getText());
+        int y = Integer.parseInt(ctx.NUMBER(1).getText());
         executor.moveSatellite(id, x, y);
         return null;
     }

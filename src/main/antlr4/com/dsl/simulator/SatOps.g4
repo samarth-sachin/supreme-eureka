@@ -33,15 +33,26 @@ grammar SatOps;
 
 program: statement+ ;
 
+//statement
+//    : 'deploy' ID ';'                                        #DeployStatement
+//    | 'move' ID 'to' '(' NUMBER ',' NUMBER ')' ';'           #MoveStatement
+//    | 'print' STRING ';'                                     #PrintStatement
+//    | 'simulateOrbit' NUMBER NUMBER NUMBER ';'               #SimulateOrbitStatement
+//    ;
 statement
     : 'deploy' ID ';'                                        #deployStatement
-    | 'move' ID 'to' '(' INT ',' INT ')' ';'                 #moveStatement
+    | 'move' ID 'to' '(' NUMBER ',' NUMBER ')' ';'           #moveStatement
     | 'print' STRING ';'                                     #printStatement
     | 'simulateOrbit' NUMBER NUMBER NUMBER ';'               #simulateOrbitStatement
+    | 'deployGroundStation' ID 'at' '(' NUMBER ',' NUMBER ')' ';' #deployGroundStationStatement
+    | 'link' ID 'to' ID ';'                                  #linkStatement
+    | 'unlink' ID 'from' ID ';'                              #unlinkStatement
+    | 'send' ID 'to' ID STRING ';'                           #sendStatement
+    | 'receive' ID 'from' ID ';'                             #receiveStatement
     ;
 
+
 ID      : [a-zA-Z_] [a-zA-Z_0-9]* ;
-NUMBER  : [0-9]+ ('.' [0-9]+)? ;  // supports int and decimal
-INT     : [0-9]+ ;                // used only for move
+NUMBER  : [0-9]+ ('.' [0-9]+)? ;
 STRING  : '"' (~["\r\n])* '"' ;
 WS      : [ \t\r\n]+ -> skip ;

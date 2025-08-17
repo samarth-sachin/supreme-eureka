@@ -1,6 +1,7 @@
 package com.dsl.simulator;
 
 import com.dsl.simulator.Orekit.SatellitePropagation;
+import com.dsl.simulator.visitor.SatOpsVisitor;
 import org.orekit.data.DataContext;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.data.DirectoryCrawler;
@@ -28,9 +29,48 @@ public class SatopsDslApplication {
 
 		// Run satellite propagation simulation
 		SatellitePropagation propagation = new SatellitePropagation();
-//		propagation.runSimulation();
+		SatOpsVisitor visitor = new SatOpsVisitor();
+		visitor.printAll();
 
 		// Start Spring Boot
 		SpringApplication.run(SatopsDslApplication.class, args);
 	}
 }
+//package com.dsl.simulator;
+//
+//import com.dsl.simulator.visitor.SatOpsVisitor;
+//import com.dsl.simulator.SatOpsLexer;
+//import com.dsl.simulator.SatOpsParser;
+//import org.antlr.v4.runtime.CharStreams;
+//import org.antlr.v4.runtime.CommonTokenStream;
+//import org.springframework.boot.SpringApplication;
+//import org.springframework.boot.autoconfigure.SpringBootApplication;
+//
+//import java.io.InputStream;
+//
+//@SpringBootApplication
+//public class SatopsDslApplication {
+//
+//	public static void main(String[] args) throws Exception {
+//		// Load .satops script from resources
+//		InputStream scriptStream = SatopsDslApplication.class.getClassLoader().getResourceAsStream("script.satops");
+//		if (scriptStream == null) {
+//			throw new RuntimeException("script.satops file not found in resources!");
+//		}
+//
+//		// ANTLR parsing
+//		SatOpsLexer lexer = new SatOpsLexer(CharStreams.fromStream(scriptStream));
+//		CommonTokenStream tokens = new CommonTokenStream(lexer);
+//		SatOpsParser parser = new SatOpsParser(tokens);
+//
+//		// Run visitor
+//		SatOpsVisitor visitor = new SatOpsVisitor();
+//		visitor.visit(parser.program());
+//
+//		// Print memory of satellites after execution
+//		visitor.printSatellites();
+//
+//		// Start Spring Boot normally (optional)
+//		SpringApplication.run(SatopsDslApplication.class, args);
+//	}
+//}

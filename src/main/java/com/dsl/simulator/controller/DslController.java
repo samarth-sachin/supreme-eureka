@@ -1,5 +1,6 @@
 package com.dsl.simulator.controller;
 
+import com.dsl.simulator.visitor.SatOpsVisitor;
 import com.dsl.simulator.visitor.SatOpsVisitorImpl;
 import com.dsl.simulator.SatOpsLexer;
 import com.dsl.simulator.SatOpsParser;
@@ -19,8 +20,10 @@ public class DslController {
             SatOpsParser parser = new SatOpsParser(new CommonTokenStream(lexer));
 
             // Visit and execute
-            SatOpsVisitorImpl visitor = new SatOpsVisitorImpl();
-            return visitor.visitProgram(parser.program());
+//            SatOpsVisitorImpl visitor = new SatOpsVisitorImpl();
+//            return visitor.visitProgram(parser.program()).toString();
+            SatOpsVisitor visitor1=new SatOpsVisitor();
+            return visitor1.visitProgram(parser.program()).toString();
 
         } catch (Exception e) {
             return "Error executing DSL: " + e.getMessage();
