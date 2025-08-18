@@ -3,6 +3,7 @@ package com.dsl.simulator.controller;
 import com.dsl.simulator.SatOpsLexer;
 import com.dsl.simulator.SatOpsParser;
 import com.dsl.simulator.visitor.SatOpsVisitor;
+import com.dsl.simulator.Orekit.SatellitePropagation;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.springframework.web.bind.annotation.*;
@@ -20,15 +21,25 @@ public class DslController {
             SatOpsVisitor visitor = new SatOpsVisitor();
             visitor.visitProgram(parser.program());
 
+            // Run a test orbit propagation (you can later wire this to DSL commands)
+            SatellitePropagation sim = new SatellitePropagation();
+            sim.simulateOrbit(7000e3, 0.001, 98.7);  // Example LEO orbit
+
+            // Print visitor results on terminal
+            System.out.println("Visitor Satellites: " + visitor.getSatellites().values());
+            System.out.println("Visitor GroundStations: " + visitor.getGroundStations().values());
 
             return " DSL executed successfully!\n\n" +
                     " Satellites: " + visitor.getSatellites().values() + "\n" +
                     " GroundStations: " + visitor.getGroundStations().values();
         } catch (Exception e) {
+            e.printStackTrace();
             return " Error executing DSL: " + e.getMessage();
         }
     }
 }
+
+
 
 
 //

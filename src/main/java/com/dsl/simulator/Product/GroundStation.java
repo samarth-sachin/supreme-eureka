@@ -1,10 +1,16 @@
 package com.dsl.simulator.Product;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 public class GroundStation {
     private String Name;
     private double Latitude;
     private double Longitude;
-
+    public Set<String> linkedSatellites = new HashSet<>();
+    public List<String> messages = new ArrayList<>();
     public String getName() {
         return Name;
     }

@@ -1,9 +1,16 @@
 package com.dsl.simulator.Product;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 public class Satellite {
     private String satelliteName;
     private int x;
     private int y;
+    public Set<String> linkedStations = new HashSet<>();
+
 
     public String getSatelliteName() {
         return satelliteName;
