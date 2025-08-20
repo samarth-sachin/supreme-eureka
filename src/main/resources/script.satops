@@ -1,4 +1,0 @@
-deploy sat1;
-move sat1 to (100, 200);
-print "Hello from DSL!";
-simulateOrbit 7000000 0.001 98.7;

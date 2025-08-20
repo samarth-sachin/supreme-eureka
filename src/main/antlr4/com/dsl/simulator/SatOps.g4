@@ -113,7 +113,7 @@ receiveStatement
     : 'receive' ID 'from' ID ';'
     ;
 
-// ---- Lexer ----
+//  lexer like conditons
 ID      : [a-zA-Z_][a-zA-Z0-9_]* ;
 NUMBER  : [0-9]+ ('.' [0-9]+)? ;
 STRING  : '"' (~["\\] | '\\' .)* '"' ;
