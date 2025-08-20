@@ -29,30 +29,93 @@
 //// The "-> skip" command discards the token.
 //WS      : [ \t\r\n]+ -> skip ;
 //
+//grammar SatOps;
+//
+//program: statement+ ;
+//
+////statement
+////    : 'deploy' ID ';'                                        #DeployStatement
+////    | 'move' ID 'to' '(' NUMBER ',' NUMBER ')' ';'           #MoveStatement
+////    | 'print' STRING ';'                                     #PrintStatement
+////    | 'simulateOrbit' NUMBER NUMBER NUMBER ';'               #SimulateOrbitStatement
+////    ;
+//statement
+//    : 'deploy' ID ';'                                        #deployStatement
+//    | 'move' ID 'to' '(' NUMBER ',' NUMBER ')' ';'           #moveStatement
+//    | 'print' STRING ';'                                     #printStatement
+//    | 'simulateOrbit' NUMBER NUMBER NUMBER ';'               #simulateOrbitStatement
+//    | 'deployGroundStation' ID 'at' '(' NUMBER ',' NUMBER ')' ';' #deployGroundStationStatement
+//    | 'link' ID 'to' ID ';'                                  #linkStatement
+//    | 'unlink' ID 'from' ID ';'                              #unlinkStatement
+//    | 'send' ID 'to' ID STRING ';'                           #sendStatement
+//    | 'receive' ID 'from' ID ';'                             #receiveStatement
+//    ;
+//
+//
+//ID      : [a-zA-Z_] [a-zA-Z_0-9]* ;
+//NUMBER  : [0-9]+ ('.' [0-9]+)? ;
+//STRING  : '"' (~["\r\n])* '"' ;
+//WS      : [ \t\r\n]+ -> skip ;
 grammar SatOps;
 
-program: statement+ ;
-
-//statement
-//    : 'deploy' ID ';'                                        #DeployStatement
-//    | 'move' ID 'to' '(' NUMBER ',' NUMBER ')' ';'           #MoveStatement
-//    | 'print' STRING ';'                                     #PrintStatement
-//    | 'simulateOrbit' NUMBER NUMBER NUMBER ';'               #SimulateOrbitStatement
-//    ;
-statement
-    : 'deploy' ID ';'                                        #deployStatement
-    | 'move' ID 'to' '(' NUMBER ',' NUMBER ')' ';'           #moveStatement
-    | 'print' STRING ';'                                     #printStatement
-    | 'simulateOrbit' NUMBER NUMBER NUMBER ';'               #simulateOrbitStatement
-    | 'deployGroundStation' ID 'at' '(' NUMBER ',' NUMBER ')' ';' #deployGroundStationStatement
-    | 'link' ID 'to' ID ';'                                  #linkStatement
-    | 'unlink' ID 'from' ID ';'                              #unlinkStatement
-    | 'send' ID 'to' ID STRING ';'                           #sendStatement
-    | 'receive' ID 'from' ID ';'                             #receiveStatement
+// Entry
+program
+    : statement+ EOF
     ;
 
+// Labeled alternatives for statements
+statement
+    : deployStatement                 #deployStatementAlt
+    | moveStatement                   #moveStatementAlt
+    | printStatement                  #printStatementAlt
+    | simulateOrbitStatement          #simulateOrbitStatementAlt
+    | deployGroundStationStatement    #deployGroundStationStatementAlt
+    | linkStatement                   #linkStatementAlt
+    | unlinkStatement                 #unlinkStatementAlt
+    | sendStatement                   #sendStatementAlt
+    | receiveStatement                #receiveStatementAlt
+    ;
 
-ID      : [a-zA-Z_] [a-zA-Z_0-9]* ;
+// ---- Commands ----
+deployStatement
+    : 'deploy' ID ';'
+    ;
+
+moveStatement
+    : 'move' ID 'to' '(' NUMBER ',' NUMBER ')' ';'
+    ;
+
+printStatement
+    : 'print' STRING ';'
+    ;
+
+simulateOrbitStatement
+    : 'simulateOrbit' NUMBER NUMBER NUMBER ';'
+    ;
+
+deployGroundStationStatement
+    : 'deployGroundStation' ID 'at' '(' NUMBER ',' NUMBER ')' ';'
+    ;
+
+linkStatement
+    : 'link' ID 'to' ID ';'
+    ;
+
+unlinkStatement
+    : 'unlink' ID 'from' ID ';'
+    ;
+
+sendStatement
+    : 'send' ID 'to' ID STRING ';'
+    ;
+
+receiveStatement
+    : 'receive' ID 'from' ID ';'
+    ;
+
+// ---- Lexer ----
+ID      : [a-zA-Z_][a-zA-Z0-9_]* ;
 NUMBER  : [0-9]+ ('.' [0-9]+)? ;
-STRING  : '"' (~["\r\n])* '"' ;
+STRING  : '"' (~["\\] | '\\' .)* '"' ;
 WS      : [ \t\r\n]+ -> skip ;
+COMMENT : '//' ~[\r\n]* -> skip ;

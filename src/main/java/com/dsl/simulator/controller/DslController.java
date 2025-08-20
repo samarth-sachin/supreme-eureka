@@ -1,10 +1,8 @@
 package com.dsl.simulator.controller;
 
-import com.dsl.simulator.Product.Orbit;
 import com.dsl.simulator.SatOpsLexer;
 import com.dsl.simulator.SatOpsParser;
 import com.dsl.simulator.visitor.SatOpsVisitor;
-import com.dsl.simulator.Orekit.SatellitePropagation;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.springframework.web.bind.annotation.*;
@@ -14,36 +12,72 @@ import org.springframework.web.bind.annotation.*;
 public class DslController {
 
     @PostMapping("/run")
-    public String runDsl(@RequestBody String script) {
+    public String runDSL(@RequestBody String script) {
         try {
+            // ANTLR setup
             SatOpsLexer lexer = new SatOpsLexer(CharStreams.fromString(script));
             SatOpsParser parser = new SatOpsParser(new CommonTokenStream(lexer));
 
+            // Visit DSL program
             SatOpsVisitor visitor = new SatOpsVisitor();
-            visitor.visitProgram(parser.program());
+            visitor.visit(parser.program());
 
+            // Return collected logs as response
+            return String.join("\n", visitor.getLogs());
 
-
-            SatellitePropagation sim = new SatellitePropagation();
-//            sim.simulateOrbit(7000e3, 0.001, 98.7);
-            Orbit orbit = visitor.getCurrentOrbit();
-
-
-            // Print visitor results on terminal
-            System.out.println("Visitor Satellites: " + visitor.getSatellites().values());
-            System.out.println("Visitor GroundStations: " + visitor.getGroundStations().values());
-
-            return " DSL executed successfully!\n\n" +
-                    " Satellites: " + visitor.getSatellites().values() + "\n" +
-                    " GroundStations: " + visitor.getGroundStations().values()+"\n"
-                    +"Future Velocity:"+visitor.getLastVelocity();
         } catch (Exception e) {
             e.printStackTrace();
-            return " Error executing DSL: " + e.getMessage();
+            return "Error while running DSL: " + e.getMessage();
         }
     }
 }
 
+//package com.dsl.simulator.controller;
+//
+//import com.dsl.simulator.Product.Orbit;
+//import com.dsl.simulator.SatOpsLexer;
+//import com.dsl.simulator.SatOpsParser;
+//import com.dsl.simulator.visitor.SatOpsVisitor;
+//import com.dsl.simulator.Orekit.SatellitePropagation;
+//import org.antlr.v4.runtime.CharStreams;
+//import org.antlr.v4.runtime.CommonTokenStream;
+//import org.springframework.web.bind.annotation.*;
+//
+//@RestController
+//@RequestMapping("/dsl")
+//public class DslController {
+//
+//    @PostMapping("/run")
+//    public String runDsl(@RequestBody String script) {
+//        try {
+//            SatOpsLexer lexer = new SatOpsLexer(CharStreams.fromString(script));
+//            SatOpsParser parser = new SatOpsParser(new CommonTokenStream(lexer));
+//
+//            SatOpsVisitor visitor = new SatOpsVisitor();
+//            visitor.visitProgram(parser.program());
+//
+//
+//
+////            SatellitePropagation sim = new SatellitePropagation();
+////            sim.simulateOrbit(7000e3, 0.001, 98.7);
+//            Orbit orbit = visitor.getCurrentOrbit();
+//
+//
+//            // Print visitor results on terminal
+//            System.out.println("Visitor Satellites: " + visitor.getSatellites().values());
+//            System.out.println("Visitor GroundStations: " + visitor.getGroundStations().values());
+//
+//            return " DSL executed successfully!\n\n" +
+//                    " Satellites: " + visitor.getSatellites().values() + "\n" +
+//                    " GroundStations: " + visitor.getGroundStations().values()+"\n"
+//                    +"Future Velocity:"+visitor.getLastVelocity();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return " Error executing DSL: " + e.getMessage();
+//        }
+//    }
+//}
+//
 
 
 

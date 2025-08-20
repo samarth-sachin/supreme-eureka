@@ -1,53 +1,40 @@
 package com.dsl.simulator.Product;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class Satellite {
     private String satelliteName;
     private int x;
     private int y;
-    public Set<String> linkedStations = new HashSet<>();
 
+    // stations this satellite is linked to
+    public final Set<String> linkedStations = new LinkedHashSet<>();
 
-    public String getSatelliteName() {
-        return satelliteName;
-    }
+    public Satellite() {}
 
-    public void setSatelliteName(String satelliteName) {
+    public Satellite(String satelliteName, int x, int y) {
         this.satelliteName = satelliteName;
-    }
-
-    public int getX() {
-        return x;
-    }
-
-    public void setX(int x) {
         this.x = x;
-    }
-
-    public int getY() {
-        return y;
-    }
-
-    public void setY(int y) {
         this.y = y;
     }
+
+    public String getSatelliteName() { return satelliteName; }
+    public void setSatelliteName(String satelliteName) { this.satelliteName = satelliteName; }
+
+    public int getX() { return x; }
+    public int getY() { return y; }
+
+    // keep method name exactly as used in your visitor
     public void setpostion(int x, int y) {
-        this.x=x;
-        this.y=y;
+        this.x = x;
+        this.y = y;
     }
+    // optional correctly spelled alias (not used by visitor but handy)
+    public void setPosition(int x, int y) { setpostion(x, y); }
 
     @Override
     public String toString() {
-        return "Satellite{" +
-                "satelliteName='" + satelliteName + '\'' +
-                ", x=" + x +
-                ", y=" + y +
-                '}';
+        return "Satellite{satelliteName='" + satelliteName + "', x=" + x + ", y=" + y + "}";
     }
-
-
 }

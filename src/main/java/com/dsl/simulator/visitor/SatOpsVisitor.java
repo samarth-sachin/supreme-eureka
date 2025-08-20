@@ -2,44 +2,51 @@ package com.dsl.simulator.visitor;
 
 import com.dsl.simulator.Product.GroundStation;
 import com.dsl.simulator.Product.Orbit;
+import com.dsl.simulator.Product.Satellite;
 import com.dsl.simulator.SatOpsBaseVisitor;
 import com.dsl.simulator.SatOpsParser;
-import com.dsl.simulator.Product.Satellite;
 import lombok.Getter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Getter
 public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
+
     @Getter
-    private Orbit currentOrbit; // store last simulated orbit
+    private Orbit currentOrbit; // Store last simulated orbit
     private double lastVelocity;
-    // Map to keep track of satellites
+
+    // Track satellites and ground stations
     private Map<String, Satellite> satellites = new HashMap<>();
     private Map<String, GroundStation> groundStations = new HashMap<>();
+    private final List<String> logs = new ArrayList<>();
 
+    // === Program ===
     @Override
     public Void visitProgram(SatOpsParser.ProgramContext ctx) {
         ctx.statement().forEach(this::visit);
         return null;
     }
 
+    // === Deploy Satellite ===
     @Override
     public Void visitDeployStatement(SatOpsParser.DeployStatementContext ctx) {
         String satellite = ctx.ID().getText();
 
         Satellite sat = new Satellite();
         sat.setSatelliteName(satellite);
-        sat.setX(0);
-        sat.setY(0);
+        sat.setPosition(0, 0);
 
         satellites.put(satellite, sat);
         System.out.println("Deployed: " + sat);
+        logs.add("Deployed: " + sat);
         return null;
     }
 
+    // === Move Satellite ===
     @Override
     public Void visitMoveStatement(SatOpsParser.MoveStatementContext ctx) {
         String satellite = ctx.ID().getText();
@@ -50,19 +57,24 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
         if (sat != null) {
             sat.setpostion(x, y);
             System.out.println("Moved: " + sat);
+            logs.add("Moved: " + sat);
         } else {
             System.out.println("Error: " + satellite + " not deployed yet.");
+            logs.add("Error: " + satellite + " not deployed yet.");
         }
         return null;
     }
 
+    // === Print Statement ===
     @Override
     public Void visitPrintStatement(SatOpsParser.PrintStatementContext ctx) {
         String message = ctx.STRING().getText().replaceAll("^\"|\"$", "");
         System.out.println(message);
+        logs.add("Message: " + message);
         return null;
     }
 
+    // === Simulate Orbit ===
     @Override
     public Void visitSimulateOrbitStatement(SatOpsParser.SimulateOrbitStatementContext ctx) {
         double sma = Double.parseDouble(ctx.NUMBER(0).getText());
@@ -70,18 +82,22 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
         double inc = Double.parseDouble(ctx.NUMBER(2).getText());
 
         Orbit orbit = new Orbit(sma, ecc, inc);
+        this.currentOrbit = orbit;
         lastVelocity = Math.sqrt(398600.4418 / sma);
+
         System.out.println("Initial orbit: " + orbit);
+        logs.add("Initial orbit: " + orbit);
         orbit.propagate(600);   // +10 min
         System.out.println("State @ +10 min: " + orbit);
+        logs.add("State @ +10 min: " + orbit);
         orbit.propagate(3600);  // +60 min
         System.out.println("State @ +60 min: " + orbit);
+        logs.add("State @ +60 min: " + orbit);
 
         return null;
     }
 
-
-    // Add Ground Station Support
+    // === Deploy Ground Station ===
     @Override
     public Void visitDeployGroundStationStatement(SatOpsParser.DeployGroundStationStatementContext ctx) {
         String name = ctx.ID().getText();
@@ -92,18 +108,11 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
         groundStations.put(name, gs);
 
         System.out.println("Deployed Ground Station: " + gs);
+        logs.add("Deployed Ground Station: " + gs);
         return null;
     }
 
-    // Helper to print everything
-    public void printAll() {
-        System.out.println("=== Satellites ===");
-        satellites.values().forEach(System.out::println);
-
-        System.out.println("=== Ground Stations ===");
-        groundStations.values().forEach(System.out::println);
-    }
-
+    // === Link Satellite <-> GroundStation ===
     @Override
     public Void visitLinkStatement(SatOpsParser.LinkStatementContext ctx) {
         String satId = ctx.ID(0).getText();
@@ -116,12 +125,15 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
             sat.linkedStations.add(gsId);
             gs.linkedSatellites.add(satId);
             System.out.println("Linked satellite " + satId + " to ground station " + gsId);
+            logs.add("Linked satellite " + satId + " to ground station " + gsId);
         } else {
             System.out.println("Error: Cannot link, objects not found.");
+            logs.add("Error: Cannot link, objects not found.");
         }
         return null;
     }
 
+    // === Unlink Satellite <-> GroundStation ===
     @Override
     public Void visitUnlinkStatement(SatOpsParser.UnlinkStatementContext ctx) {
         String satId = ctx.ID(0).getText();
@@ -134,12 +146,15 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
             sat.linkedStations.remove(gsId);
             gs.linkedSatellites.remove(satId);
             System.out.println("Unlinked satellite " + satId + " from ground station " + gsId);
+            logs.add("Unlinked satellite " + satId + " from ground station " + gsId);
         } else {
             System.out.println("Error: Cannot unlink, objects not found.");
+            logs.add("Error: Cannot unlink, objects not found.");
         }
         return null;
     }
 
+    // === Send Message ===
     @Override
     public Void visitSendStatement(SatOpsParser.SendStatementContext ctx) {
         String satId = ctx.ID(0).getText();
@@ -158,6 +173,7 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
         return null;
     }
 
+    // === Receive Message ===
     @Override
     public Void visitReceiveStatement(SatOpsParser.ReceiveStatementContext ctx) {
         String gsId = ctx.ID(0).getText();
@@ -179,7 +195,17 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
         }
         return null;
     }
+
+    // === Debug Helper ===
+    public void printAll() {
+        System.out.println("=== Satellites ===");
+        satellites.values().forEach(System.out::println);
+
+        System.out.println("=== Ground Stations ===");
+        groundStations.values().forEach(System.out::println);
+    }
 }
+
 //package com.dsl.simulator.visitor;
 //
 //import com.dsl.simulator.Product.GroundStation;
