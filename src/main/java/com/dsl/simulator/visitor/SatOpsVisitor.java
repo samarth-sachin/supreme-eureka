@@ -1,5 +1,6 @@
 package com.dsl.simulator.visitor;
 
+import com.dsl.simulator.Orekit.SatellitePropagation;
 import com.dsl.simulator.Product.GroundStation;
 import com.dsl.simulator.Product.Orbit;
 import com.dsl.simulator.Product.Satellite;
@@ -81,21 +82,22 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
         double ecc = Double.parseDouble(ctx.NUMBER(1).getText());
         double inc = Double.parseDouble(ctx.NUMBER(2).getText());
 
-        Orbit orbit = new Orbit(sma, ecc, inc);
-        this.currentOrbit = orbit;
-        lastVelocity = Math.sqrt(398600.4418 / sma);
+        try {
 
-        System.out.println("Initial orbit: " + orbit);
-        logs.add("Initial orbit: " + orbit);
-        orbit.propagate(600);   // +10 min
-        System.out.println("State @ +10 min: " + orbit);
-        logs.add("State @ +10 min: " + orbit);
-        orbit.propagate(3600);  // +60 min
-        System.out.println("State @ +60 min: " + orbit);
-        logs.add("State @ +60 min: " + orbit);
+            SatellitePropagation propagation = new SatellitePropagation();
+            String result = propagation.simulateOrbit(sma, ecc, inc);
+
+            System.out.println("Simulating orbit with Orekit:\n" + result);
+            logs.add("Simulating orbit with Orekit:\n" + result);
+
+        } catch (Exception e) {
+            System.err.println("Error during orbit simulation: " + e.getMessage());
+            logs.add("Error during orbit simulation: " + e.getMessage());
+        }
 
         return null;
     }
+
 
     // === Deploy Ground Station ===
     @Override
