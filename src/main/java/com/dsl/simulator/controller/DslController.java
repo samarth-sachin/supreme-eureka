@@ -1,5 +1,6 @@
 package com.dsl.simulator.controller;
 
+import com.dsl.simulator.Product.Orbit;
 import com.dsl.simulator.SatOpsLexer;
 import com.dsl.simulator.SatOpsParser;
 import com.dsl.simulator.visitor.SatOpsVisitor;
@@ -21,9 +22,12 @@ public class DslController {
             SatOpsVisitor visitor = new SatOpsVisitor();
             visitor.visitProgram(parser.program());
 
-            // Run a test orbit propagation (you can later wire this to DSL commands)
+
+
             SatellitePropagation sim = new SatellitePropagation();
-            sim.simulateOrbit(7000e3, 0.001, 98.7);  // Example LEO orbit
+//            sim.simulateOrbit(7000e3, 0.001, 98.7);
+            Orbit orbit = visitor.getCurrentOrbit();
+
 
             // Print visitor results on terminal
             System.out.println("Visitor Satellites: " + visitor.getSatellites().values());
@@ -31,7 +35,8 @@ public class DslController {
 
             return " DSL executed successfully!\n\n" +
                     " Satellites: " + visitor.getSatellites().values() + "\n" +
-                    " GroundStations: " + visitor.getGroundStations().values();
+                    " GroundStations: " + visitor.getGroundStations().values()+"\n"
+                    +"Future Velocity:"+visitor.getLastVelocity();
         } catch (Exception e) {
             e.printStackTrace();
             return " Error executing DSL: " + e.getMessage();

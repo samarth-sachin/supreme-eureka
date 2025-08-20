@@ -1,6 +1,7 @@
 package com.dsl.simulator.visitor;
 
 import com.dsl.simulator.Product.GroundStation;
+import com.dsl.simulator.Product.Orbit;
 import com.dsl.simulator.SatOpsBaseVisitor;
 import com.dsl.simulator.SatOpsParser;
 import com.dsl.simulator.Product.Satellite;
@@ -12,7 +13,9 @@ import java.util.Map;
 
 @Getter
 public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
-
+    @Getter
+    private Orbit currentOrbit; // store last simulated orbit
+    private double lastVelocity;
     // Map to keep track of satellites
     private Map<String, Satellite> satellites = new HashMap<>();
     private Map<String, GroundStation> groundStations = new HashMap<>();
@@ -66,9 +69,17 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
         double ecc = Double.parseDouble(ctx.NUMBER(1).getText());
         double inc = Double.parseDouble(ctx.NUMBER(2).getText());
 
-        System.out.println("Simulating orbit -> SMA: " + sma + ", ECC: " + ecc + ", INC: " + inc);
+        Orbit orbit = new Orbit(sma, ecc, inc);
+        lastVelocity = Math.sqrt(398600.4418 / sma);
+        System.out.println("Initial orbit: " + orbit);
+        orbit.propagate(600);   // +10 min
+        System.out.println("State @ +10 min: " + orbit);
+        orbit.propagate(3600);  // +60 min
+        System.out.println("State @ +60 min: " + orbit);
+
         return null;
     }
+
 
     // Add Ground Station Support
     @Override
