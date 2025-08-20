@@ -22,6 +22,8 @@ This project provides a way to write `.satops` scripts that define satellite dep
 
 
 ---
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/311d5700-59d2-4e87-be4b-cc045c198ce0" />
+
 
 ## 📝 Example DSL Script  
 
