@@ -1,0 +1,8 @@
+deploy sunyan;
+move sunyan to (196, 200);
+print "Mission started";
+simulateOrbit 5500 0.01 45.0;
+deployGroundStation pune at (45.0, 93.0);
+link sunyan to pune;
+unlink sunyan from pune;
+send sunyan to pune "Telemetry data";

@@ -1,6 +1,8 @@
 package com.dsl.simulator.visitor;
 
 import com.dsl.simulator.Orekit.SatellitePropagation;
+import com.dsl.simulator.Orekit.VisibilityUtil;
+import com.dsl.simulator.Predictor.PassPredictor;
 import com.dsl.simulator.Product.GroundStation;
 import com.dsl.simulator.Product.Orbit;
 import com.dsl.simulator.Product.Satellite;
@@ -12,6 +14,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static java.rmi.server.LogStream.log;
 
 @Getter
 public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
@@ -115,25 +119,82 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
     }
 
     // satellite to ground stations
+//    @Override
+//    public Void visitLinkStatement(SatOpsParser.LinkStatementContext ctx) {
+//        String satId = ctx.ID(0).getText();
+//        String gsId = ctx.ID(1).getText();
+//
+//        Satellite sat = satellites.get(satId);
+//        GroundStation gs = groundStations.get(gsId);
+//
+//        if (sat != null && gs != null) {
+//            sat.linkedStations.add(gsId);
+//            gs.linkedSatellites.add(satId);
+//            System.out.println("Linked satellite " + satId + " to ground station " + gsId);
+//            logs.add("Linked satellite " + satId + " to ground station " + gsId);
+//        } else {
+//            System.out.println("Error: Cannot link, objects not found.");
+//            logs.add("Error: Cannot link, objects not found.");
+//        }
+//        return null;
+//    }
     @Override
     public Void visitLinkStatement(SatOpsParser.LinkStatementContext ctx) {
         String satId = ctx.ID(0).getText();
-        String gsId = ctx.ID(1).getText();
+        String gsId  = ctx.ID(1).getText();
 
         Satellite sat = satellites.get(satId);
         GroundStation gs = groundStations.get(gsId);
 
-        if (sat != null && gs != null) {
-            sat.linkedStations.add(gsId);
-            gs.linkedSatellites.add(satId);
-            System.out.println("Linked satellite " + satId + " to ground station " + gsId);
-            logs.add("Linked satellite " + satId + " to ground station " + gsId);
-        } else {
-            System.out.println("Error: Cannot link, objects not found.");
-            logs.add("Error: Cannot link, objects not found.");
+        if (sat == null || gs == null) {
+            log("Error: Cannot link, objects not found.");
+            return null;
         }
+
+        // Use configured min elevation or fallback
+        double minElev = (gs.minElevationDeg > 0 ? gs.minElevationDeg : 10.0);
+
+        try {
+            boolean visibleNow = false;
+
+            // Use KeplerianPropagator from SatellitePropagation
+            if (sat.getKeplerianPropagator() != null) {
+                visibleNow = VisibilityUtil.isVisibleNow(
+                        sat.getKeplerianPropagator(),
+                        gs.getLatitude(),
+                        gs.getLongitude(),
+                        minElev
+                );
+            }
+
+            if (visibleNow) {
+                sat.linkedStations.add(gsId);
+                gs.linkedSatellites.add(satId);
+                log("Linked (visible) satellite " + satId + " to ground station " + gsId);
+            } else {
+                log("Not visible now: " + satId + " -> " + gsId + " (below " + minElev + "°).");
+
+                // Predict next pass (within 12 hours)
+                if (sat.getKeplerianPropagator() != null) {
+                    PassPredictor.nextPassWindow(
+                            sat.getKeplerianPropagator(),
+                            gs.getLatitude(),
+                            gs.getLongitude(),
+                            minElev,
+                            12 * 3600
+                    ).ifPresentOrElse(
+                            logs::add,
+                            () -> logs.add("No pass predicted in next 12h for " + satId + " -> " + gsId)
+                    );
+                }
+            }
+        } catch (Exception e) {
+            log("Error during visibility check: " + e.getMessage());
+        }
+
         return null;
     }
+
 
     // unlink satellite
     @Override

@@ -34,7 +34,7 @@ public class DslController {
     }
     @GetMapping("/auto")
     public String autoDSL() {
-        return runner.runFromResource("script.satx");
+        return runner.runFromResource("script.stx");
     }
 }
 

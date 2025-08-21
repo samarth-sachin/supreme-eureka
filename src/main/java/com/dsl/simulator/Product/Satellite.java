@@ -1,5 +1,7 @@
 package com.dsl.simulator.Product;
 
+import org.orekit.propagation.analytical.KeplerianPropagator;
+
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -7,8 +9,18 @@ public class Satellite {
     private String satelliteName;
     private int x;
     private int y;
+    private KeplerianPropagator propagator;
 
-    // stations this satellite is linked to
+    public Satellite(String satelliteName, KeplerianPropagator prop) {
+        this.satelliteName = satelliteName;
+        this.propagator = prop;
+    }
+
+    public KeplerianPropagator getKeplerianPropagator() {
+        return propagator;
+    }
+
+        // stations this satellite is linked to
     public final Set<String> linkedStations = new LinkedHashSet<>();
 
     public Satellite() {}

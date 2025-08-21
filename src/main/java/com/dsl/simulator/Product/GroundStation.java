@@ -9,6 +9,7 @@ public class GroundStation {
     private String name;
     private double latitude;
     private double longitude;
+    public double minElevationDeg = 10.0;
 
     // satellites this GS is linked to
     public final Set<String> linkedSatellites = new LinkedHashSet<>();
