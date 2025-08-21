@@ -6,9 +6,10 @@ import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
 import org.orekit.frames.TopocentricFrame;
+import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.orekit.propagation.analytical.KeplerianPropagator;
+import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
@@ -21,7 +22,6 @@ public class VisibilityUtil {
 
     /** Returns now (UTC) as Orekit AbsoluteDate */
     public static AbsoluteDate nowUtc() {
-        // Convert Java Instant -> Date, then build Orekit AbsoluteDate
         return new AbsoluteDate(Date.from(Instant.now()), TimeScalesFactory.getUTC());
     }
 
@@ -58,6 +58,13 @@ public class VisibilityUtil {
         AbsoluteDate now = nowUtc();
         SpacecraftState s = prop.propagate(now);
         double el = elevationDeg(s, latDeg, lonDeg, 0.0, now);
+        return el >= minElevDeg;
+    }
+
+    /** Generic: visibility at given date using any Propagator */
+    public static boolean isVisibleAt(Propagator prop, AbsoluteDate when, double latDeg, double lonDeg, double minElevDeg) {
+        SpacecraftState s = prop.propagate(when);
+        double el = elevationDeg(s, latDeg, lonDeg, 0.0, when);
         return el >= minElevDeg;
     }
 }

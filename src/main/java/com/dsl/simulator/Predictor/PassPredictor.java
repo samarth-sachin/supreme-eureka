@@ -1,7 +1,5 @@
 package com.dsl.simulator.Predictor;
 
-import org.hipparchus.geometry.euclidean.threed.Vector3D;
-import org.hipparchus.ode.events.Action;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.frames.Frame;
@@ -11,13 +9,11 @@ import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.ElevationDetector;
 import org.orekit.propagation.events.EventsLogger;
-import org.orekit.propagation.events.handlers.EventHandler;
+import org.orekit.propagation.events.handlers.ContinueOnEvent;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 import org.orekit.utils.IERSConventions;
-//import org.orekit.propagation.events.handlers.EventHandler.Action;
-
 
 import java.time.Instant;
 import java.util.Date;
@@ -25,7 +21,13 @@ import java.util.Optional;
 
 public class PassPredictor {
 
-    public static Optional<String> nextPassWindow(Propagator propagator, double latDeg, double lonDeg, double minElevDeg, double searchSeconds) {
+    public static Optional<String> nextPassWindow(
+            Propagator propagator,
+            double latDeg,
+            double lonDeg,
+            double minElevDeg,
+            double searchSeconds) {
+
         Frame itrf = FramesFactory.getITRF(IERSConventions.IERS_2010, true);
 
         OneAxisEllipsoid earth = new OneAxisEllipsoid(
@@ -33,22 +35,13 @@ public class PassPredictor {
                 Constants.WGS84_EARTH_FLATTENING,
                 itrf
         );
+
         GeodeticPoint site = new GeodeticPoint(Math.toRadians(latDeg), Math.toRadians(lonDeg), 0.0);
         TopocentricFrame topo = new TopocentricFrame(earth, site, "gs");
 
-//        ElevationDetector det = new ElevationDetector(topo)
-//                .withConstantElevation(Math.toRadians(minElevDeg))
-//                .withHandler((SpacecraftState s, ElevationDetector detector, boolean increasing) -> {
-//                    // increasing = AOS, decreasing = LOS
-//                    return EventHandler.Action.CONTINUE;
-//                });
         ElevationDetector det = new ElevationDetector(topo)
                 .withConstantElevation(Math.toRadians(minElevDeg))
-                .withHandler((SpacecraftState s, ElevationDetector detector, boolean increasing) -> {
-                    // increasing = AOS, decreasing = LOS
-                    return Action.CONTINUE;
-                });
-
+                .withHandler(new ContinueOnEvent<ElevationDetector>());
 
         EventsLogger logger = new EventsLogger();
         var monitored = logger.monitorDetector(det);

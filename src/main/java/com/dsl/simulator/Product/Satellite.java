@@ -1,52 +1,83 @@
 package com.dsl.simulator.Product;
 
-import org.orekit.propagation.analytical.KeplerianPropagator;
+import org.orekit.propagation.Propagator;
+import org.orekit.time.AbsoluteDate;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class Satellite {
     private String satelliteName;
-    private int x;
-    private int y;
-    private KeplerianPropagator propagator;
 
-    public Satellite(String satelliteName, KeplerianPropagator prop) {
-        this.satelliteName = satelliteName;
-        this.propagator = prop;
-    }
+    // Dummy coordinates mode (kept for backwards compatibility)
+    private Integer x;
+    private Integer y;
 
-    public KeplerianPropagator getKeplerianPropagator() {
-        return propagator;
-    }
+    // Physics mode (preferred): generic Orekit propagator
+    private Propagator propagator;
 
-        // stations this satellite is linked to
+    // Per-satellite time reference for propagation-based commands
+    // (defaults to "now" at creation; can be advanced by 'move')
+    private AbsoluteDate currentDate;
+
+    // stations this satellite is linked to
     public final Set<String> linkedStations = new LinkedHashSet<>();
 
+    // ---- Constructors ----
     public Satellite() {}
 
+    // Physics-based constructor
+    public Satellite(String satelliteName, Propagator propagator, AbsoluteDate epoch) {
+        this.satelliteName = satelliteName;
+        this.propagator = propagator;
+        this.currentDate = epoch;
+    }
+
+    // Simple (x,y) constructor
     public Satellite(String satelliteName, int x, int y) {
         this.satelliteName = satelliteName;
         this.x = x;
         this.y = y;
+        this.currentDate = null; // no physics time tracking in dummy mode
     }
 
+    // ---- Getters/Setters ----
     public String getSatelliteName() { return satelliteName; }
     public void setSatelliteName(String satelliteName) { this.satelliteName = satelliteName; }
 
-    public int getX() { return x; }
-    public int getY() { return y; }
+    public Integer getX() { return x; }
+    public Integer getY() { return y; }
 
-    // keep method name exactly as used in your visitor
-    public void setpostion(int x, int y) {
+    // Correctly spelled method
+    public void setPosition(int x, int y) {
         this.x = x;
         this.y = y;
     }
-    // optional correctly spelled alias (not used by visitor but handy)
-    public void setPosition(int x, int y) { setpostion(x, y); }
+
+    // (kept only to avoid breaking old visitor code; ideally remove and use setPosition)
+    public void setpostion(int x, int y) { setPosition(x, y); }
+
+    public Propagator getPropagator() { return propagator; }
+    public void setPropagator(Propagator propagator) { this.propagator = propagator; }
+
+    public boolean isPhysicsBased() { return propagator != null; }
+
+    public AbsoluteDate getCurrentDate() { return currentDate; }
+    public void setCurrentDate(AbsoluteDate currentDate) { this.currentDate = currentDate; }
+
+    /** Advance per-satellite time (only meaningful in physics mode) */
+    public void advanceTime(double dtSeconds) {
+        if (currentDate != null) {
+            currentDate = currentDate.shiftedBy(dtSeconds);
+        }
+    }
 
     @Override
     public String toString() {
-        return "Satellite{satelliteName='" + satelliteName + "', x=" + x + ", y=" + y + "}";
+        if (isPhysicsBased()) {
+            return "Satellite{satelliteName='" + satelliteName + "', mode=Physics, epoch=" + currentDate + "}";
+        } else {
+            return "Satellite{satelliteName='" + satelliteName + "', x=" + x + ", y=" + y + "}";
+        }
     }
 }

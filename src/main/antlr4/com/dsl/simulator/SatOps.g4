@@ -56,14 +56,76 @@
 //NUMBER  : [0-9]+ ('.' [0-9]+)? ;
 //STRING  : '"' (~["\r\n])* '"' ;
 //WS      : [ \t\r\n]+ -> skip ;
+//working #59
+//grammar SatOps;
+//
+//
+//program
+//    : statement+ EOF
+//    ;
+//statement
+//    : deployStatement                 #deployStatementAlt
+//    | moveStatement                   #moveStatementAlt
+//    | printStatement                  #printStatementAlt
+//    | simulateOrbitStatement          #simulateOrbitStatementAlt
+//    | deployGroundStationStatement    #deployGroundStationStatementAlt
+//    | linkStatement                   #linkStatementAlt
+//    | unlinkStatement                 #unlinkStatementAlt
+//    | sendStatement                   #sendStatementAlt
+//    | receiveStatement                #receiveStatementAlt
+//    ;
+//
+//// ---- Commands ----
+//deployStatement
+//    : 'deploy' ID ';'
+//    ;
+//
+//moveStatement
+//    : 'move' ID 'to' '(' NUMBER ',' NUMBER ')' ';'
+//    ;
+//
+//printStatement
+//    : 'print' STRING ';'
+//    ;
+//
+//simulateOrbitStatement
+//    : 'simulateOrbit' NUMBER NUMBER NUMBER ';'
+//    ;
+//
+//deployGroundStationStatement
+//    : 'deployGroundStation' ID 'at' '(' NUMBER ',' NUMBER ')' ';'
+//    ;
+//
+//linkStatement
+//    : 'link' ID 'to' ID ';'
+//    ;
+//
+//unlinkStatement
+//    : 'unlink' ID 'from' ID ';'
+//    ;
+//
+//sendStatement
+//    : 'send' ID 'to' ID STRING ';'
+//    ;
+//
+//receiveStatement
+//    : 'receive' ID 'from' ID ';'
+//    ;
+//
+////  lexer like conditons
+//ID      : [a-zA-Z_][a-zA-Z0-9_]* ;
+//NUMBER  : [0-9]+ ('.' [0-9]+)? ;
+//STRING  : '"' (~["\\] | '\\' .)* '"' ;
+//WS      : [ \t\r\n]+ -> skip ;
+//COMMENT : '//' ~[\r\n]* -> skip ;
+// SatOps.g4
 grammar SatOps;
 
-// Entry
+// ---------------- Entry ----------------
 program
     : statement+ EOF
     ;
 
-// Labeled alternatives for statements
 statement
     : deployStatement                 #deployStatementAlt
     | moveStatement                   #moveStatementAlt
@@ -74,9 +136,10 @@ statement
     | unlinkStatement                 #unlinkStatementAlt
     | sendStatement                   #sendStatementAlt
     | receiveStatement                #receiveStatementAlt
+    | predictPassStatement            #predictPassStatementAlt
     ;
 
-// ---- Commands ----
+// ---------------- Commands ----------------
 deployStatement
     : 'deploy' ID ';'
     ;
@@ -113,7 +176,12 @@ receiveStatement
     : 'receive' ID 'from' ID ';'
     ;
 
-//  lexer like conditons
+// 🚀 New command: Predict satellite pass over a ground station
+predictPassStatement
+    : 'predictPass' ID 'over' ID ';'
+    ;
+
+// ---------------- Lexer ----------------
 ID      : [a-zA-Z_][a-zA-Z0-9_]* ;
 NUMBER  : [0-9]+ ('.' [0-9]+)? ;
 STRING  : '"' (~["\\] | '\\' .)* '"' ;
