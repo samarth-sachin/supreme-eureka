@@ -137,7 +137,10 @@ statement
     | sendStatement                   #sendStatementAlt
     | receiveStatement                #receiveStatementAlt
     | predictPassStatement            #predictPassStatementAlt
+    | maneuverStatement               #maneuverStatementAlt
     ;
+
+maneuverStatement: 'maneuver' ID 'burn' NUMBER 'in' ID 'direction' ';';
 
 // ---------------- Commands ----------------
 deployStatement
@@ -176,7 +179,6 @@ receiveStatement
     : 'receive' ID 'from' ID ';'
     ;
 
-// 🚀 New command: Predict satellite pass over a ground station
 predictPassStatement
     : 'predictPass' ID 'over' ID ';'
     ;
