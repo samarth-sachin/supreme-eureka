@@ -143,8 +143,10 @@ statement
 maneuverStatement: 'maneuver' ID 'burn' NUMBER 'in' ID 'direction' ';';
 
 // ---------------- Commands ----------------
-deployStatement
-    : 'deploy' ID ';'
+// In your SatOps.g4 file
+
+deployStatement:
+    'deploy' ID 'with' 'id' NUMBER ';'
     ;
 
 moveStatement

@@ -31,9 +31,7 @@ public class SatopsDslApplication {
 			throw new RuntimeException("Failed to locate Orekit data", e);
 		}
 
-		// --- 2. Start the Spring Boot Application ---
-		// This single line starts your web server and initializes all your @Service,
-		// @RestController, and @Repository components.
+
 		SpringApplication.run(SatopsDslApplication.class, args);
 	}
 }
