@@ -23,7 +23,7 @@ public class CelestrakService {
      */
     public Optional<TLE> fetchTleById(int noradId) {
         try {
-            // Make the API call to Celestrak
+
             Mono<String> tleStringMono = this.webClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .queryParam("CATNR", noradId)
@@ -32,10 +32,10 @@ public class CelestrakService {
                     .retrieve()
                     .bodyToMono(String.class);
 
-            // Block and wait for the response
+
             String tleString = tleStringMono.block();
 
-            // The response is a 3-line string (Name, Line 1, Line 2). We need to split it.
+
             if (tleString != null && !tleString.isBlank()) {
                 String[] lines = tleString.trim().split("\r?\n");
                 if (lines.length == 3) {
@@ -44,7 +44,7 @@ public class CelestrakService {
                 }
             }
         } catch (Exception e) {
-            // Log the error but don't crash the application
+
             System.err.println("Failed to fetch TLE from Celestrak: " + e.getMessage());
         }
         return Optional.empty();
