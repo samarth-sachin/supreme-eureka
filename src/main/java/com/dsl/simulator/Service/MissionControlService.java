@@ -1,5 +1,6 @@
 package com.dsl.simulator.Service;
 
+import com.dsl.simulator.Orekit.SatellitePropagation;
 import com.dsl.simulator.Orekit.VisibilityUtil;
 import com.dsl.simulator.Predictor.PassPredictor;
 import com.dsl.simulator.Product.GroundStation;
@@ -39,6 +40,7 @@ public class MissionControlService {
     private final Map<String, Satellite> activeSatellites = new HashMap<>();
     private final Map<String, GroundStation> activeGroundStations = new HashMap<>();
     private final List<QueuedMessage> messageQueue = new ArrayList<>();
+    private SatellitePropagation satellitePropagation;
 
     private static class QueuedMessage {
         final String satId, gsId, text;
@@ -190,29 +192,6 @@ public class MissionControlService {
                 sat.getPropagator(), gs.getLatitude(), gs.getLongitude(), gs.minElevationDeg, 86400);
     }
 
-    public String simulateOrbit(double smaMeters, double ecc, double incDegrees) {
-        try {
-            List<String> logs = new ArrayList<>();
-            var inertialFrame = FramesFactory.getEME2000();
-            AbsoluteDate initialDate = new AbsoluteDate(2025, 1, 1, 12, 0, 0.0, TimeScalesFactory.getUTC());
-
-            Orbit initialOrbit = new KeplerianOrbit(
-                    smaMeters, ecc, Math.toRadians(incDegrees), 0.0, 0.0, 0.0,
-                    PositionAngle.MEAN, inertialFrame, initialDate, Constants.EIGEN5C_EARTH_MU);
-
-            KeplerianPropagator propagator = new KeplerianPropagator(initialOrbit);
-
-            SpacecraftState state10min = propagator.propagate(initialDate.shiftedBy(600));
-            PVCoordinates pv10min = state10min.getPVCoordinates();
-            logs.add(String.format("T+10min Pos (km): (%.2f, %.2f, %.2f)",
-                    pv10min.getPosition().getX()/1000, pv10min.getPosition().getY()/1000, pv10min.getPosition().getZ()/1000));
-
-            return String.join("\n", logs);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "Propagation failed: " + e.getMessage();
-        }
-    }
 
     private Optional<TLE> loadTleFromClasspath(String satId) {
         String path = "/tle/" + satId + ".tle";

@@ -28,6 +28,7 @@ public class DslController {
 
             SatOpsVisitor visitor = new SatOpsVisitor(missionControlService);
             visitor.visit(parser.program());
+            visitor.printLogs();
 
             return String.join("\n", visitor.getLogs());
         } catch (Exception e) {

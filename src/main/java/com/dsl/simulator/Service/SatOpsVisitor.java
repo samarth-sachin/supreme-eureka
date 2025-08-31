@@ -1,5 +1,6 @@
 package com.dsl.simulator.Service;
 
+import com.dsl.simulator.Orekit.SatellitePropagation;
 import com.dsl.simulator.Product.GroundStation;
 import com.dsl.simulator.Product.Satellite;
 import com.dsl.simulator.SatOpsBaseVisitor;
@@ -13,6 +14,7 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
 
     private final MissionControlService missionControlService;
     private final List<String> logs = new ArrayList<>();
+    private SatellitePropagation satellitePropagation=new SatellitePropagation();
 
     public SatOpsVisitor(MissionControlService missionControlService) {
         this.missionControlService = missionControlService;
@@ -127,7 +129,7 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
         double ecc = Double.parseDouble(ctx.NUMBER(1).getText());
         double inc = Double.parseDouble(ctx.NUMBER(2).getText());
         logs.add("--- Orbit Simulation Results ---");
-        logs.add(missionControlService.simulateOrbit(smaKm * 1000, ecc, inc)); // convert km to meters
+        logs.add(satellitePropagation.simulateOrbit(smaKm * 1000, ecc, inc)); // convert km to meters
         logs.add("------------------------------");
         return null;
     }
@@ -139,5 +141,12 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
         String direction = ctx.ID(1).getText();
         logs.add(missionControlService.executeManeuver(satId, deltaV, direction));
         return null;
+    }
+    public void printLogs() {
+        System.out.println("--- DSL Execution Log ---");
+        for (String logEntry : this.logs) {
+            System.out.println(logEntry);
+        }
+        System.out.println("-------------------------");
     }
 }
