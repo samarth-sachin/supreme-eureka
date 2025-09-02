@@ -29,6 +29,7 @@ Built with **Spring Boot + Kotlin + ANTLR4 + Orekit**, this project enables miss
   - Ready for DBMS persistence & Kafka integration
 
 ---
+<img width="1719" height="796" alt="image" src="https://github.com/user-attachments/assets/e8f70703-54c5-4fab-b548-d962ea5c44dc" />
 
 ## 📖 Example DSL Script
 
