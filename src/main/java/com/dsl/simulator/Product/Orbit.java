@@ -5,6 +5,12 @@ package com.dsl.simulator.Product;
  * Units: a in km, angles in degrees, time in seconds. (Lightweight for DSL demo)
  */
 public class Orbit {
+//   a=  Defines the size of the orbit (semi-major axis).
+//    e = Defines the shape of the orbit (eccentricity, 0=circle).
+//i = Defines the tilt of the orbit relative to the Equator (inclination).
+//pa = Defines the orientation of the orbit within its plane (argument of perigee).
+//raan = Defines the swivel of the orbit's plane around the Earth (RAAN).
+//v = Defines the satellite's current position along its orbit (true anomaly).
     private double a;
     private double e;
     private double i;

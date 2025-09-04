@@ -12,8 +12,8 @@ import org.springframework.stereotype.Service;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-@Service // 1. Mark this class as a Spring-managed Service
-@RequiredArgsConstructor // 2. Create a constructor for the final fields
+@Service
+@RequiredArgsConstructor
 public class SatOpsRunner {
 
     // 3. Define the required service dependency
@@ -26,13 +26,13 @@ public class SatOpsRunner {
                 return "Error: Resource file not found: " + filename;
             }
 
-            // --- ANTLR Parsing (no change) ---
+
             SatOpsLexer lexer = new SatOpsLexer(CharStreams.fromStream(inputStream, StandardCharsets.UTF_8));
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SatOpsParser parser = new SatOpsParser(tokens);
             SatOpsParser.ProgramContext tree = parser.program();
 
-            // 4. THE CRITICAL CHANGE: Create the visitor with the injected service
+
             SatOpsVisitor visitor = new SatOpsVisitor(missionControlService);
             visitor.visit(tree);
 
