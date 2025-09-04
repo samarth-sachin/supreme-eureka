@@ -1,41 +1,41 @@
-# 🛰️ SatOps DSL Simulator  
+# 🛰️ SatOps-DSL
 
-A **Domain Specific Language (DSL)** for simulating satellite operations, ground station support, and mission control workflows.  
-This project provides a way to write `.satops` scripts that define satellite deployments, movements, telemetry, and ground station communication, and then execute them via a Spring Boot backend.  
-
----
-
-## 🚀 Features  
-
-- **Custom DSL** (`.satops` files) for satellite operations.  
-- Commands to:  
-  - Deploy satellites into memory.  
-  - Move satellites (change latitude/longitude/orbit).  
-  - Print status/telemetry.  
-  - Add & manage **Ground Stations** (e.g., Pune, Bangkok).  
-  - Support communication between satellites and ground stations.  
-- Backend built with **Spring Boot** (Java 21 + ANTLR4).  
-- **In-memory execution** (with plan for MySQL persistence).  
-- Future integration with **CesiumJS** for interactive 3D visualization of satellites.  
+A **Domain-Specific Language (DSL)** and **simulation engine** for satellite operations, mission planning, and resource management.  
+Built with **Spring Boot + Kotlin + ANTLR4 + Orekit**, this project enables mission control teams to define and execute satellite operations using simple DSL commands.  
 
 ---
 
+## 🚀 Features
+
+- **Custom DSL for Satellite Operations**
+  - Deploy satellites & ground stations
+  - Link/unlink satellites with stations
+  - Send/receive messages
+  - Execute mission scripts
+
+- **Celestrak + Orekit Integration**
+  - Fetch TLEs (Two-Line Elements) for real satellites
+  - Simulate orbits & ground station visibility
+  - Propagate satellite positions
+
+- **Mission Control**
+  - Run mission scenarios via DSL
+  - Validate visibility before sending messages
+  - Future support for scheduling & optimization
+
+- **Extensible Backend**
+  - Designed with **Spring Boot**
+  - Pluggable with **OptaPlanner** for optimization
+  - Ready for DBMS persistence & Kafka integration
 
 ---
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/311d5700-59d2-4e87-be4b-cc045c198ce0" />
+<img width="1719" height="796" alt="image" src="https://github.com/user-attachments/assets/e8f70703-54c5-4fab-b548-d962ea5c44dc" />
 
+## 📖 Example DSL Script
 
-## 📝 Example DSL Script  
+```dsl
+deploy satellite Sat1 at Celestrak:STARLINK-3000
+deploy groundstation GS1 at "Pune, India"
 
-```satops
-deploy Sat1 at 19.07, 72.87 altitude 500;
-deploy Sat2 at 13.73, 100.52 altitude 550;
-
-move Sat1 to 20.00, 73.00 altitude 510;
-
-groundstation Pune at 18.52, 73.85;
-groundstation Bangkok at 13.73, 100.52;
-
-print Sat1;
-print Pune;
-
+link Sat1 to GS1
+send "Hello Earth!" from Sat1 to GS1
