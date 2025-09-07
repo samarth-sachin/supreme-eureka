@@ -15,9 +15,6 @@ public class SatopsDslApplication {
 
 	public static void main(String[] args) {
 
-		// --- 1. Configure Orekit Data (Essential Setup) ---
-		// This part is correct and necessary. It loads the physics data
-		// needed for Orekit to run calculations.
 		try {
 			final URL orekitDataUrl = SatopsDslApplication.class.getClassLoader().getResource("orekit-data-main");
 			if (orekitDataUrl == null) {
