@@ -1,7 +1,7 @@
 # 🛰️ SatOps-DSL
 
 A **Domain-Specific Language (DSL)** and **simulation engine** for satellite operations, mission planning, and resource management.  
-Built with **Spring Boot + Kotlin + ANTLR4 + Orekit**, this project enables mission control teams to define and execute satellite operations using simple DSL commands.  
+Built with **Spring Boot + Java + ANTLR4 + Orekit**, this project enables mission control teams to define and execute satellite operations using simple DSL commands.  
 
 ---
 
