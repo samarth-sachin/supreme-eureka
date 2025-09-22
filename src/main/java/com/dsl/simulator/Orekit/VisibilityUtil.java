@@ -20,12 +20,9 @@ import java.util.Date;
 
 public class VisibilityUtil {
 
-    /** Returns now (UTC) as Orekit AbsoluteDate */
     public static AbsoluteDate nowUtc() {
         return new AbsoluteDate(Date.from(Instant.now()), TimeScalesFactory.getUTC());
     }
-
-    /** Build WGS84 Earth */
     public static OneAxisEllipsoid wgs84Earth(Frame bodyFrame) {
         return new OneAxisEllipsoid(
                 Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
@@ -33,8 +30,6 @@ public class VisibilityUtil {
                 bodyFrame
         );
     }
-
-    /** Compute elevation (deg) of spacecraft state as seen from (lat,lon,alt) */
     public static double elevationDeg(SpacecraftState state, double latDeg, double lonDeg, double altMeters, AbsoluteDate date) {
         Frame itrf = FramesFactory.getITRF(IERSConventions.IERS_2010, true);
         OneAxisEllipsoid earth = wgs84Earth(itrf);
@@ -45,23 +40,21 @@ public class VisibilityUtil {
         return Math.toDegrees(elevRad);
     }
 
-    /** Convenience: is visible now for TLE-based propagator */
+    // is visible now for TLE-based propagator
     public static boolean isVisibleNow(TLEPropagator prop, double latDeg, double lonDeg, double minElevDeg) {
         AbsoluteDate now = nowUtc();
         SpacecraftState s = prop.propagate(now);
         double el = elevationDeg(s, latDeg, lonDeg, 0.0, now);
         return el >= minElevDeg;
     }
-
-    /** Convenience: is visible now for Keplerian propagator */
+// is visible from now using keplerian orbit
     public static boolean isVisibleNow(KeplerianPropagator prop, double latDeg, double lonDeg, double minElevDeg) {
         AbsoluteDate now = nowUtc();
         SpacecraftState s = prop.propagate(now);
         double el = elevationDeg(s, latDeg, lonDeg, 0.0, now);
         return el >= minElevDeg;
     }
-
-    /** Generic: visibility at given date using any Propagator */
+//is this visible from this or not
     public static boolean isVisibleAt(Propagator prop, AbsoluteDate when, double latDeg, double lonDeg, double minElevDeg) {
         SpacecraftState s = prop.propagate(when);
         double el = elevationDeg(s, latDeg, lonDeg, 0.0, when);

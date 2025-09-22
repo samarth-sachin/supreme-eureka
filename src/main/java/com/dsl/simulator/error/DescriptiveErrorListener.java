@@ -1,4 +1,3 @@
-// File: com/dsl/simulator/error/DescriptiveErrorListener.java
 package com.dsl.simulator.error;
 
 import org.antlr.v4.runtime.BaseErrorListener;
@@ -35,7 +34,7 @@ public class DescriptiveErrorListener extends BaseErrorListener {
     private String findBestMatch(String misspelled) {
         LevenshteinDistance distance = new LevenshteinDistance();
         String bestMatch = null;
-        int minDistance = 2; // Only suggest if the typo is 1 or 2 characters off.
+        int minDistance = 2; //  if the typo is 1 or 2 characters off.
 
         for (String keyword : VALID_KEYWORDS) {
             int d = distance.apply(misspelled, keyword);

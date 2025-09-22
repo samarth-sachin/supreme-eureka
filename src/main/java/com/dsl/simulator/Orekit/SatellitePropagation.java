@@ -72,3 +72,5 @@ public class SatellitePropagation {
         }
     }
 }
+//String s = String.format("Hello %s, you are %d years old", "Sam", 21);
+//System.out.println(s);
