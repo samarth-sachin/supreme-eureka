@@ -59,7 +59,61 @@ statement:
     | getGroundStationStatusStatement   #getGroundStationStatusStatementAlt
     | getSystemStatusStatement          #getSystemStatusStatementAlt
     | helpStatement                     #helpStatementAlt
+
+    // GOD-LEVEL COMMANDS
+    | propagateUltraPreciseStatement    #propagateUltraPreciseStatementAlt
+    | getRealTimeISSStatement           #getRealTimeISSStatementAlt
+    | assessCollisionRiskStatement      #assessCollisionRiskStatementAlt
+    | getCurrentSpaceWeatherStatement   #getCurrentSpaceWeatherStatementAlt
+    | calculateRealTimeDragStatement    #calculateRealTimeDragStatementAlt
+    | checkApiHealthStatement           #checkApiHealthStatementAlt
+    | getSystemTelemetryStatement       #getSystemTelemetryStatementAlt
+    | detectAnomaliesStatement          #detectAnomaliesStatementAlt
+    | predictMaintenanceStatement       #predictMaintenanceStatementAlt
+    | planDeepSpaceMissionStatement     #planDeepSpaceMissionStatementAlt
     ;
+
+// --- GOD-LEVEL COMMAND DEFINITIONS ---
+
+// Ultra-precise propagation - propagateUltraPrecise iss 24.0;
+propagateUltraPreciseStatement:
+    'propagateUltraPrecise' ID NUMBER ';';
+
+// Real-time ISS position - getRealTimeISS;
+getRealTimeISSStatement:
+    'getRealTimeISS' ';';
+
+// Collision risk assessment - assessCollisionRisk iss 72;
+assessCollisionRiskStatement:
+    'assessCollisionRisk' ID NUMBER ';';
+
+// Current space weather - getCurrentSpaceWeather;
+getCurrentSpaceWeatherStatement:
+    'getCurrentSpaceWeather' ';';
+
+// Real-time atmospheric drag - calculateRealTimeDrag iss 408.0;
+calculateRealTimeDragStatement:
+    'calculateRealTimeDrag' ID NUMBER ';';
+
+// API health check - checkApiHealth;
+checkApiHealthStatement:
+    'checkApiHealth' ';';
+
+// System telemetry - getSystemTelemetry;
+getSystemTelemetryStatement:
+    'getSystemTelemetry' ';';
+
+// AI anomaly detection - detectAnomalies iss;
+detectAnomaliesStatement:
+    'detectAnomalies' ID ';';
+
+// Predictive maintenance - predictMaintenance iss 90;
+predictMaintenanceStatement:
+    'predictMaintenance' ID NUMBER ';';
+
+// Deep space mission planning - planDeepSpaceMission probe mars 2026;
+planDeepSpaceMissionStatement:
+    'planDeepSpaceMission' ID ID NUMBER ';';
 
 // --- SATELLITE DEPLOYMENT COMMANDS ---
 
