@@ -4,6 +4,7 @@ import com.dsl.simulator.SatOpsLexer;
 import com.dsl.simulator.SatOpsParser;
 import com.dsl.simulator.Service.MissionControlService; // Correct import for the service
 import com.dsl.simulator.Service.SatOpsVisitor;       // Correct import for the visitor
+import com.dsl.simulator.Streaming.TelemetryStreamer;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -18,6 +19,7 @@ public class SatOpsRunner {
 
     // 3. Define the required service dependency
     private final MissionControlService missionControlService;
+    private final TelemetryStreamer telemetryStreamer;
 
     public String runFromResource(String filename) {
         try {
@@ -33,7 +35,7 @@ public class SatOpsRunner {
             SatOpsParser.ProgramContext tree = parser.program();
 
 
-            SatOpsVisitor visitor = new SatOpsVisitor(missionControlService);
+            SatOpsVisitor visitor = new SatOpsVisitor(missionControlService,telemetryStreamer);
             visitor.visit(tree);
 
             return String.join("\n", visitor.getLogs());

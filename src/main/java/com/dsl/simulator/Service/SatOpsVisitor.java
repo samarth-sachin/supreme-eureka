@@ -1,24 +1,39 @@
 package com.dsl.simulator.Service;
 
+import com.dsl.simulator.OptaPlaner.ConstellationOptimizer;
+import com.dsl.simulator.OptaPlaner.FormationOptimizationResult;
 import com.dsl.simulator.Orekit.SatellitePropagation;
 import com.dsl.simulator.Product.GroundStation;
 import com.dsl.simulator.Product.Satellite;
 import com.dsl.simulator.SatOpsBaseVisitor;
 import com.dsl.simulator.SatOpsParser;
 import com.dsl.simulator.Service.MissionControlService.SatelliteSubsystems;
+import com.dsl.simulator.Streaming.SatelliteAlert;
+import com.dsl.simulator.Streaming.TelemetryStreamer;
+import org.springframework.kafka.core.KafkaTemplate;
+import com.dsl.simulator.AI.AIMissionController;
+import com.dsl.simulator.AI.AnomalyDetectionService;
+import com.dsl.simulator.AI.IntelligentDecisionEngine;
+import com.dsl.simulator.AI.MachineLearningService;
+import com.dsl.simulator.AI.PatternRecognitionService;
+import com.dsl.simulator.AI.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
 
     private final MissionControlService missionControlService;
+    private final TelemetryStreamer telemetryStreamer;
     private final List<String> logs = new ArrayList<>();
     private SatellitePropagation satellitePropagation = new SatellitePropagation();
 
-    public SatOpsVisitor(MissionControlService missionControlService) {
+    public SatOpsVisitor(MissionControlService missionControlService,TelemetryStreamer telemetryStreamer) {
         this.missionControlService = missionControlService;
+        this.telemetryStreamer = telemetryStreamer;
     }
 
     public List<String> getLogs() {
@@ -564,101 +579,101 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
      * AI anomaly detection
      * Command: detectAnomalies SAT_ID;
      */
-    @Override
-    public Void visitDetectAnomaliesStatement(SatOpsParser.DetectAnomaliesStatementContext ctx) {
-        String satId = ctx.ID().getText();
-
-        logs.add("🤖 === AI ANOMALY DETECTION ===");
-        logs.add("Satellite: " + satId);
-        logs.add("ML Model: 🧠 ANALYZING...");
-
-        // Simulate AI analysis
-        double anomalyScore = Math.random();
-        if (anomalyScore > 0.8) {
-            logs.add("⚠️ ANOMALY DETECTED: Battery voltage irregular");
-            logs.add("📊 Severity: HIGH");
-            logs.add("🔧 Recommendation: Monitor power systems closely");
-            logs.add("⏰ Action Required: Within 4 hours");
-        } else if (anomalyScore > 0.6) {
-            logs.add("🟡 MINOR DEVIATION: Attitude drift detected");
-            logs.add("📊 Severity: MEDIUM");
-            logs.add("🔧 Recommendation: Attitude correction burn");
-            logs.add("⏰ Action Required: Within 24 hours");
-        } else if (anomalyScore > 0.3) {
-            logs.add("🟠 TREND NOTICE: Thermal variation observed");
-            logs.add("📊 Severity: LOW");
-            logs.add("🔧 Recommendation: Continue monitoring");
-        } else {
-            logs.add("✅ ALL SYSTEMS NOMINAL");
-            logs.add("🔍 No anomalies detected in telemetry");
-            logs.add("📈 System health: EXCELLENT");
-        }
-
-        logs.add("🎯 Confidence: " + String.format("%.1f%%", anomalyScore * 100));
-        logs.add("🕐 Analysis Time: " + String.format("%.2fs", Math.random() * 2 + 0.5));
-        logs.add("=============================");
-        return null;
-    }
-
-    /**
-     * Predictive maintenance
-     * Command: predictMaintenance SAT_ID DAYS;
-     */
-    @Override
-    public Void visitPredictMaintenanceStatement(SatOpsParser.PredictMaintenanceStatementContext ctx) {
-        String satId = ctx.ID().getText();
-        int days = Integer.parseInt(ctx.NUMBER().getText());
-
-        logs.add("🔮 === PREDICTIVE MAINTENANCE ===");
-        logs.add("Satellite: " + satId);
-        logs.add("Prediction Period: " + days + " days");
-        logs.add("");
-
-        // Simulate predictive maintenance with realistic values
-        double batteryHealth = 85 + Math.random() * 10;
-        double thrusterEfficiency = 92 + Math.random() * 6;
-        double fuelRemaining = 70 + Math.random() * 25;
-
-        logs.add("🔋 Battery Health: " + String.format("%.0f%% ", batteryHealth) +
-                (batteryHealth > 90 ? "(EXCELLENT)" : batteryHealth > 80 ? "(GOOD)" : "(FAIR)"));
-        logs.add("   📉 Predicted degradation: 2.1% per year");
-        logs.add("   🔧 Next service: " + (batteryHealth > 85 ? "18 months" : "12 months"));
-        logs.add("");
-
-        logs.add("⚙️ Reaction Wheels: " + (Math.random() > 0.8 ? "⚠️ MINOR VIBRATION" : "✅ NOMINAL"));
-        logs.add("   📊 Vibration levels: " + String.format("%.2f Hz", 0.1 + Math.random() * 0.3));
-        logs.add("   ⏱️ Estimated life: " + String.format("%.1f years remaining", 4.5 + Math.random() * 2));
-        logs.add("");
-
-        logs.add("📡 Communication: ✅ OPTIMAL");
-        logs.add("   📶 Signal strength: " + String.format("%.0f dBm", -70 + Math.random() * 10));
-        logs.add("   🔧 No maintenance required");
-        logs.add("");
-
-        logs.add("🔥 Thrusters: " + String.format("%.0f%% efficiency", thrusterEfficiency));
-        logs.add("   ⛽ Fuel remaining: " + String.format("%.0f%%", fuelRemaining));
-        logs.add("   🚀 Mission extension: " + (fuelRemaining > 60 ? "✅ POSSIBLE" : "⚠️ LIMITED"));
-        logs.add("");
-
-        // Predictive recommendations
-        if (batteryHealth < 80) {
-            logs.add("🚨 PRIORITY: Schedule battery calibration");
-        }
-        if (thrusterEfficiency < 95) {
-            logs.add("⚠️ WATCH: Monitor thruster performance");
-        }
-        if (fuelRemaining < 50) {
-            logs.add("⛽ NOTICE: Plan fuel-efficient operations");
-        }
-
-        logs.add("===============================");
-        return null;
-    }
-
-    /**
-     * Deep space mission planning
-     * Command: planDeepSpaceMission SAT_ID DESTINATION YEAR;
-     */
+//    @Override
+//    public Void visitDetectAnomaliesStatement(SatOpsParser.DetectAnomaliesStatementContext ctx) {
+//        String satId = ctx.ID().getText();
+//
+//        logs.add("🤖 === AI ANOMALY DETECTION ===");
+//        logs.add("Satellite: " + satId);
+//        logs.add("ML Model: 🧠 ANALYZING...");
+//
+//        // Simulate AI analysis
+//        double anomalyScore = Math.random();
+//        if (anomalyScore > 0.8) {
+//            logs.add("⚠️ ANOMALY DETECTED: Battery voltage irregular");
+//            logs.add("📊 Severity: HIGH");
+//            logs.add("🔧 Recommendation: Monitor power systems closely");
+//            logs.add("⏰ Action Required: Within 4 hours");
+//        } else if (anomalyScore > 0.6) {
+//            logs.add("🟡 MINOR DEVIATION: Attitude drift detected");
+//            logs.add("📊 Severity: MEDIUM");
+//            logs.add("🔧 Recommendation: Attitude correction burn");
+//            logs.add("⏰ Action Required: Within 24 hours");
+//        } else if (anomalyScore > 0.3) {
+//            logs.add("🟠 TREND NOTICE: Thermal variation observed");
+//            logs.add("📊 Severity: LOW");
+//            logs.add("🔧 Recommendation: Continue monitoring");
+//        } else {
+//            logs.add("✅ ALL SYSTEMS NOMINAL");
+//            logs.add("🔍 No anomalies detected in telemetry");
+//            logs.add("📈 System health: EXCELLENT");
+//        }
+//
+//        logs.add("🎯 Confidence: " + String.format("%.1f%%", anomalyScore * 100));
+//        logs.add("🕐 Analysis Time: " + String.format("%.2fs", Math.random() * 2 + 0.5));
+//        logs.add("=============================");
+//        return null;
+//    }
+//
+//    /**
+//     * Predictive maintenance
+//     * Command: predictMaintenance SAT_ID DAYS;
+//     */
+//    @Override
+//    public Void visitPredictMaintenanceStatement(SatOpsParser.PredictMaintenanceStatementContext ctx) {
+//        String satId = ctx.ID().getText();
+//        int days = Integer.parseInt(ctx.NUMBER().getText());
+//
+//        logs.add("🔮 === PREDICTIVE MAINTENANCE ===");
+//        logs.add("Satellite: " + satId);
+//        logs.add("Prediction Period: " + days + " days");
+//        logs.add("");
+//
+//        // Simulate predictive maintenance with realistic values
+//        double batteryHealth = 85 + Math.random() * 10;
+//        double thrusterEfficiency = 92 + Math.random() * 6;
+//        double fuelRemaining = 70 + Math.random() * 25;
+//
+//        logs.add("🔋 Battery Health: " + String.format("%.0f%% ", batteryHealth) +
+//                (batteryHealth > 90 ? "(EXCELLENT)" : batteryHealth > 80 ? "(GOOD)" : "(FAIR)"));
+//        logs.add("   📉 Predicted degradation: 2.1% per year");
+//        logs.add("   🔧 Next service: " + (batteryHealth > 85 ? "18 months" : "12 months"));
+//        logs.add("");
+//
+//        logs.add("⚙️ Reaction Wheels: " + (Math.random() > 0.8 ? "⚠️ MINOR VIBRATION" : "✅ NOMINAL"));
+//        logs.add("   📊 Vibration levels: " + String.format("%.2f Hz", 0.1 + Math.random() * 0.3));
+//        logs.add("   ⏱️ Estimated life: " + String.format("%.1f years remaining", 4.5 + Math.random() * 2));
+//        logs.add("");
+//
+//        logs.add("📡 Communication: ✅ OPTIMAL");
+//        logs.add("   📶 Signal strength: " + String.format("%.0f dBm", -70 + Math.random() * 10));
+//        logs.add("   🔧 No maintenance required");
+//        logs.add("");
+//
+//        logs.add("🔥 Thrusters: " + String.format("%.0f%% efficiency", thrusterEfficiency));
+//        logs.add("   ⛽ Fuel remaining: " + String.format("%.0f%%", fuelRemaining));
+//        logs.add("   🚀 Mission extension: " + (fuelRemaining > 60 ? "✅ POSSIBLE" : "⚠️ LIMITED"));
+//        logs.add("");
+//
+//        // Predictive recommendations
+//        if (batteryHealth < 80) {
+//            logs.add("🚨 PRIORITY: Schedule battery calibration");
+//        }
+//        if (thrusterEfficiency < 95) {
+//            logs.add("⚠️ WATCH: Monitor thruster performance");
+//        }
+//        if (fuelRemaining < 50) {
+//            logs.add("⛽ NOTICE: Plan fuel-efficient operations");
+//        }
+//
+//        logs.add("===============================");
+//        return null;
+//    }
+//
+//    /**
+//     * Deep space mission planning
+//     * Command: planDeepSpaceMission SAT_ID DESTINATION YEAR;
+//     */
     @Override
     public Void visitPlanDeepSpaceMissionStatement(SatOpsParser.PlanDeepSpaceMissionStatementContext ctx) {
         String satId = ctx.ID(0).getText();
@@ -976,4 +991,515 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
                         "Use 'help' to see all available commands.";
         }
     }
+    @Override
+    public Void visitTestOptimizerStatement(SatOpsParser.TestOptimizerStatementContext ctx) {
+        String result = missionControlService.testOptaPlanner();
+        logs.add("🧪 === OPTIMIZER TEST ===");
+        logs.add(result);
+        logs.add("========================");
+        return null;
+    }
+    // Add these methods to SatOpsVisitor.java
+
+    @Override
+    public Void visitOptimizeFormationStatement(SatOpsParser.OptimizeFormationStatementContext ctx) {
+        List<String> satelliteIds = new ArrayList<>();
+        for (var idToken : ctx.idList().ID()) {
+            satelliteIds.add(idToken.getText());
+        }
+        String formationType = ctx.ID().getText();
+        double separation = Double.parseDouble(ctx.NUMBER().getText());
+
+        ConstellationOptimizer optimizer = new ConstellationOptimizer();
+        FormationOptimizationResult result = optimizer.optimizeFormationFlying(
+                satelliteIds, formationType, separation);
+
+        logs.add("🛰️ === FORMATION OPTIMIZATION ===");
+        if (result.isSuccess()) {
+            logs.add("Formation Type: " + result.getFormationType());
+            logs.add("Satellites: " + satelliteIds.size());
+            logs.add("Fuel Cost: " + result.getTotalFuelCost() + " kg");
+            logs.add("Stability Score: " + result.getStabilityScore());
+            logs.add("Status: " + result.getMessage());
+        } else {
+            logs.add("❌ " + result.getMessage());
+        }
+        logs.add("===============================");
+        return null;
+    }
+
+    @Override
+    public Void visitOptimizeMissionPlanStatement(SatOpsParser.OptimizeMissionPlanStatementContext ctx) {
+        int hours = Integer.parseInt(ctx.NUMBER().getText());
+
+        ConstellationOptimizer optimizer = new ConstellationOptimizer();
+        String result = optimizer.optimizeMissionPlan(hours);
+        logs.add(result);
+        return null;
+    }
+
+    @Override
+    public Void visitCalculateAvoidanceStatement(SatOpsParser.CalculateAvoidanceStatementContext ctx) {
+        String satelliteId = ctx.ID(0).getText();
+        String threatId = ctx.ID(1).getText();
+
+        ConstellationOptimizer optimizer = new ConstellationOptimizer();
+        String result = optimizer.calculateAvoidanceManeuver(satelliteId, threatId);
+        logs.add(result);
+        return null;
+    }
+    @Override
+    public Void visitStartStreamStatement(SatOpsParser.StartStreamStatementContext ctx) {
+        String satelliteId = ctx.ID().getText();
+        String result = telemetryStreamer.startTelemetryStream(satelliteId);
+        logs.add("📡 " + result);
+        return null;
+    }
+
+    @Override
+    public Void visitStopStreamStatement(SatOpsParser.StopStreamStatementContext ctx) {
+        String satelliteId = ctx.ID().getText();
+        String result = telemetryStreamer.stopTelemetryStream(satelliteId);
+        logs.add("📡 " + result);
+        return null;
+    }
+
+    @Override
+    public Void visitPublishAlertStatement(SatOpsParser.PublishAlertStatementContext ctx) {
+        String satelliteId = ctx.ID(0).getText();
+        String level = ctx.ID(1).getText();
+        String message = ctx.STRING().getText().replaceAll("^\"|\"$", "");
+
+        SatelliteAlert.AlertLevel alertLevel;
+        try {
+            alertLevel = SatelliteAlert.AlertLevel.valueOf(level.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            alertLevel = SatelliteAlert.AlertLevel.WARNING;
+        }
+
+        telemetryStreamer.streamAlert(satelliteId, alertLevel, message, Map.of());
+        logs.add("🚨 Alert published for " + satelliteId + ": " + message);
+        return null;
+    }
+
+// =================== AI ANALYTICS VISITOR METHODS ===================
+
+    /**
+     * Run complete AI analysis
+     */
+    @Override
+    public Void visitRunAIAnalysisStatement(SatOpsParser.RunAIAnalysisStatementContext ctx) {
+        String satelliteId = ctx.ID().getText();
+
+        try {
+            // Create AI services (in real implementation, these would be injected)
+            PredictiveAnalyticsService predictiveService = new PredictiveAnalyticsService();
+            AnomalyDetectionService anomalyService = new AnomalyDetectionService();
+            PatternRecognitionService patternService = new PatternRecognitionService();
+            IntelligentDecisionEngine decisionEngine = new IntelligentDecisionEngine();
+            MachineLearningService mlService = new MachineLearningService();
+
+            AIMissionController aiController = new AIMissionController(
+                    predictiveService, anomalyService, patternService, decisionEngine, mlService);
+
+            String result = aiController.runCompleteAIAnalysis(satelliteId);
+            logs.add(result);
+
+        } catch (Exception e) {
+            logs.add("❌ AI Analysis failed: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Real-time anomaly detection
+     */
+    @Override
+    public Void visitDetectAnomaliesStatement(SatOpsParser.DetectAnomaliesStatementContext ctx) {
+        String satelliteId = ctx.ID().getText();
+
+        try {
+            AnomalyDetectionService anomalyService = new AnomalyDetectionService();
+            List<Anomaly> anomalies = anomalyService.detectAnomalies(satelliteId);
+
+            if (anomalies.isEmpty()) {
+                logs.add("✅ === ANOMALY DETECTION ===");
+                logs.add("Satellite: " + satelliteId);
+                logs.add("Status: All systems nominal");
+                logs.add("Confidence: 94.7%");
+                logs.add("========================");
+            } else {
+                logs.add("🚨 === ANOMALY DETECTION RESULTS ===");
+                logs.add("Satellite: " + satelliteId);
+                logs.add("Anomalies Detected: " + anomalies.size());
+                logs.add("");
+
+                for (Anomaly anomaly : anomalies) {
+                    String severity = anomaly.getSeverity().equals("CRITICAL") ? "🔴" :
+                            anomaly.getSeverity().equals("HIGH") ? "🟠" : "🟡";
+                    logs.add(severity + " " + anomaly.getType() + ":");
+                    logs.add("   Parameter: " + anomaly.getParameter());
+                    logs.add("   Current: " + anomaly.getCurrentValue());
+                    logs.add("   Expected: " + anomaly.getExpectedValue());
+                    logs.add("   Confidence: " + String.format("%.1f%%", anomaly.getConfidence() * 100));
+                    logs.add("   Recommendation: " + anomaly.getRecommendation());
+                    logs.add("");
+                }
+                logs.add("=================================");
+            }
+
+        } catch (Exception e) {
+            logs.add("❌ Anomaly detection failed: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Monitor real-time anomalies
+     */
+    @Override
+    public Void visitMonitorRealTimeStatement(SatOpsParser.MonitorRealTimeStatementContext ctx) {
+        String satelliteId = ctx.ID().getText();
+
+        try {
+            PredictiveAnalyticsService predictiveService = new PredictiveAnalyticsService();
+            AnomalyDetectionService anomalyService = new AnomalyDetectionService();
+            PatternRecognitionService patternService = new PatternRecognitionService();
+            IntelligentDecisionEngine decisionEngine = new IntelligentDecisionEngine();
+            MachineLearningService mlService = new MachineLearningService();
+
+            AIMissionController aiController = new AIMissionController(
+                    predictiveService, anomalyService, patternService, decisionEngine, mlService);
+
+            String result = aiController.monitorRealTimeAnomalies(satelliteId);
+            logs.add(result);
+
+        } catch (Exception e) {
+            logs.add("❌ Real-time monitoring failed: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Generate AI-powered mission plan
+     */
+    @Override
+    public Void visitGenerateAIMissionStatement(SatOpsParser.GenerateAIMissionStatementContext ctx) {
+        String satelliteId = ctx.ID(0).getText();
+        String missionType = ctx.ID(1).getText();
+        int durationHours = Integer.parseInt(ctx.NUMBER().getText());
+
+        try {
+            PredictiveAnalyticsService predictiveService = new PredictiveAnalyticsService();
+            AnomalyDetectionService anomalyService = new AnomalyDetectionService();
+            PatternRecognitionService patternService = new PatternRecognitionService();
+            IntelligentDecisionEngine decisionEngine = new IntelligentDecisionEngine();
+            MachineLearningService mlService = new MachineLearningService();
+
+            AIMissionController aiController = new AIMissionController(
+                    predictiveService, anomalyService, patternService, decisionEngine, mlService);
+
+            List<String> satelliteIds = Arrays.asList(satelliteId);
+            String result = aiController.generateAIMissionPlan(missionType, satelliteIds, durationHours);
+            logs.add(result);
+
+        } catch (Exception e) {
+            logs.add("❌ AI mission planning failed: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Update machine learning models
+     */
+    @Override
+    public Void visitUpdateMLModelsStatement(SatOpsParser.UpdateMLModelsStatementContext ctx) {
+        String satelliteId = ctx.ID().getText();
+
+        try {
+            MachineLearningService mlService = new MachineLearningService();
+            String result = mlService.updateMLModels(satelliteId);
+            logs.add(result);
+
+        } catch (Exception e) {
+            logs.add("❌ ML model update failed: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Evaluate ML model performance
+     */
+    @Override
+    public Void visitEvaluateModelsStatement(SatOpsParser.EvaluateModelsStatementContext ctx) {
+        try {
+            MachineLearningService mlService = new MachineLearningService();
+            String result = mlService.evaluateModelPerformance();
+            logs.add(result);
+
+        } catch (Exception e) {
+            logs.add("❌ Model evaluation failed: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Predict satellite health using AI
+     */
+    @Override
+    public Void visitPredictHealthStatement(SatOpsParser.PredictHealthStatementContext ctx) {
+        String satelliteId = ctx.ID().getText();
+
+        try {
+            PredictiveAnalyticsService predictiveService = new PredictiveAnalyticsService();
+            HealthPrediction prediction = predictiveService.predictSatelliteHealth(satelliteId);
+
+            logs.add("🔮 === HEALTH PREDICTION ===");
+            logs.add("Satellite: " + satelliteId);
+            logs.add("Overall Health: " + String.format("%.1f%%", prediction.getOverallHealth() * 100));
+            logs.add("Prediction Confidence: " + String.format("%.1f%%", prediction.getPredictionConfidence() * 100));
+            logs.add("");
+            logs.add("📊 SYSTEM BREAKDOWN:");
+
+            for (Map.Entry<String, Double> system : prediction.getSystemHealth().entrySet()) {
+                String status = system.getValue() > 0.9 ? "✅" : system.getValue() > 0.7 ? "⚠️" : "🔴";
+                logs.add("   " + status + " " + system.getKey() + ": " +
+                        String.format("%.1f%%", system.getValue() * 100));
+            }
+
+            if (!prediction.getPredictedFailures().isEmpty()) {
+                logs.add("");
+                logs.add("🚨 PREDICTED ISSUES:");
+                for (PredictedFailure failure : prediction.getPredictedFailures()) {
+                    logs.add("   ⚠️ " + failure.getComponent() + " failure in " +
+                            failure.getDaysUntilFailure() + " days");
+                    logs.add("      Confidence: " + String.format("%.1f%%", failure.getConfidence() * 100));
+                    logs.add("      Impact: " + failure.getImpact());
+                }
+            }
+
+            logs.add("========================");
+
+        } catch (Exception e) {
+            logs.add("❌ Health prediction failed: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Analyze behavioral patterns
+     */
+    @Override
+    public Void visitAnalyzePatternsStatement(SatOpsParser.AnalyzePatternsStatementContext ctx) {
+        String satelliteId = ctx.ID().getText();
+
+        try {
+            PatternRecognitionService patternService = new PatternRecognitionService();
+            PatternAnalysis patterns = patternService.analyzePatterns(satelliteId);
+
+            logs.add("📊 === PATTERN ANALYSIS ===");
+            logs.add("Satellite: " + satelliteId);
+            logs.add("Analysis Confidence: " + String.format("%.1f%%", patterns.getAnalysisConfidence() * 100));
+            logs.add("Pattern Stability: " + String.format("%.1f%%", patterns.getPatternStability() * 100));
+            logs.add("");
+            logs.add("📈 PERFORMANCE TRENDS:");
+
+            for (Map.Entry<String, Double> trend : patterns.getPerformanceTrends().entrySet()) {
+                String arrow = trend.getValue() > 0 ? "📈" : trend.getValue() < 0 ? "📉" : "➡️";
+                logs.add("   " + arrow + " " + trend.getKey() + ": " +
+                        String.format("%+.2f%% change", trend.getValue() * 100));
+            }
+
+            logs.add("");
+            logs.add("💡 BEHAVIORAL INSIGHTS:");
+            for (String insight : patterns.getBehavioralInsights()) {
+                logs.add("   • " + insight);
+            }
+
+            logs.add("======================");
+
+        } catch (Exception e) {
+            logs.add("❌ Pattern analysis failed: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Predict optimal operational windows
+     */
+    @Override
+    public Void visitPredictOptimalWindowsStatement(SatOpsParser.PredictOptimalWindowsStatementContext ctx) {
+        String satelliteId = ctx.ID().getText();
+
+        try {
+            PatternRecognitionService patternService = new PatternRecognitionService();
+            OptimalWindows windows = patternService.predictOptimalWindows(satelliteId);
+
+            logs.add("⏰ === OPTIMAL OPERATIONAL WINDOWS ===");
+            logs.add("Satellite: " + satelliteId);
+            logs.add("Average Efficiency: " + String.format("%.1f%%", windows.getAverageEfficiency() * 100));
+            logs.add("Prediction Accuracy: " + String.format("%.1f%%", windows.getPredictionAccuracy() * 100));
+            logs.add("");
+            logs.add("📅 RECOMMENDED WINDOWS:");
+
+            for (TimeWindow window : windows.getOptimalWindows()) {
+                logs.add("   🕐 " + window.getStartTime() + " - " + window.getEndTime());
+                logs.add("      Activity: " + window.getActivity());
+                logs.add("      Efficiency: " + String.format("%.1f%%", window.getEfficiency() * 100));
+                logs.add("      Reason: " + window.getReason());
+                logs.add("");
+            }
+
+            logs.add("=====================================");
+
+        } catch (Exception e) {
+            logs.add("❌ Optimal windows prediction failed: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Forecast collision risk
+     */
+    @Override
+    public Void visitForecastCollisionRiskStatement(SatOpsParser.ForecastCollisionRiskStatementContext ctx) {
+        String satelliteId = ctx.ID().getText();
+        int forecastDays = Integer.parseInt(ctx.NUMBER().getText());
+
+        try {
+            PredictiveAnalyticsService predictiveService = new PredictiveAnalyticsService();
+            CollisionRiskForecast forecast = predictiveService.predictCollisionRisk(satelliteId, forecastDays);
+
+            logs.add("⚠️ === COLLISION RISK FORECAST ===");
+            logs.add("Satellite: " + satelliteId);
+            logs.add("Forecast Period: " + forecastDays + " days");
+            logs.add("Overall Risk Level: " + forecast.getOverallRiskLevel());
+            logs.add("AI Confidence: " + String.format("%.1f%%", forecast.getAiConfidence() * 100));
+            logs.add("");
+            logs.add("📊 DAILY RISK BREAKDOWN:");
+
+            for (DailyRiskAssessment daily : forecast.getDailyRisks()) {
+                String riskIcon = daily.getRiskLevel().equals("ELEVATED") ? "🔴" :
+                        daily.getRiskLevel().equals("MODERATE") ? "🟡" : "🟢";
+                logs.add("   Day " + daily.getDay() + " " + riskIcon + " " + daily.getRiskLevel());
+                logs.add("      Risk Probability: " + String.format("%.4f%%", daily.getRiskProbability() * 100));
+                logs.add("      Threatening Objects: " + daily.getThreateningObjects());
+
+                if (daily.getRiskLevel().equals("ELEVATED")) {
+                    logs.add("      ⚠️ ELEVATED RISK - Consider avoidance planning");
+                }
+                logs.add("");
+            }
+
+            logs.add("=================================");
+
+        } catch (Exception e) {
+            logs.add("❌ Collision risk forecast failed: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Generate emergency response plan
+     */
+    @Override
+    public Void visitGenerateEmergencyPlanStatement(SatOpsParser.GenerateEmergencyPlanStatementContext ctx) {
+        String satelliteId = ctx.ID().getText();
+
+        try {
+            AnomalyDetectionService anomalyService = new AnomalyDetectionService();
+            IntelligentDecisionEngine decisionEngine = new IntelligentDecisionEngine();
+
+            // Get critical anomalies
+            List<Anomaly> criticalAnomalies = anomalyService.detectRealTimeAnomalies(satelliteId);
+
+            if (criticalAnomalies.isEmpty()) {
+                logs.add("✅ === EMERGENCY ASSESSMENT ===");
+                logs.add("Satellite: " + satelliteId);
+                logs.add("Status: No emergency conditions detected");
+                logs.add("All systems operating within normal parameters");
+                logs.add("===========================");
+            } else {
+                List<AIRecommendation> emergencyActions = decisionEngine.generateEmergencyActions(criticalAnomalies);
+
+                logs.add("🆘 === EMERGENCY RESPONSE PLAN ===");
+                logs.add("Satellite: " + satelliteId);
+                logs.add("Critical Anomalies: " + criticalAnomalies.size());
+                logs.add("Emergency Actions: " + emergencyActions.size());
+                logs.add("");
+                logs.add("🚨 IMMEDIATE ACTIONS REQUIRED:");
+
+                for (int i = 0; i < emergencyActions.size(); i++) {
+                    AIRecommendation action = emergencyActions.get(i);
+                    logs.add("   " + (i + 1) + ". " + action.getActionType());
+                    logs.add("      Action: " + action.getDescription());
+                    logs.add("      Priority: " + action.getPriority());
+                    logs.add("      Success Rate: " + String.format("%.1f%%", action.getSuccessProbability() * 100));
+                    logs.add("      Timeframe: " + action.getTimeframe());
+                    logs.add("");
+                }
+                logs.add("===============================");
+            }
+
+        } catch (Exception e) {
+            logs.add("❌ Emergency plan generation failed: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * AI-powered constellation analysis
+     */
+    @Override
+    public Void visitAnalyzeConstellationStatement(SatOpsParser.AnalyzeConstellationStatementContext ctx) {
+        try {
+            PatternRecognitionService patternService = new PatternRecognitionService();
+
+            // Sample constellation satellites
+            List<String> constellationSatellites = Arrays.asList("SAT_Alpha", "SAT_Beta", "SAT_Gamma", "SAT_Delta");
+            ConstellationPatterns patterns = patternService.analyzeConstellationPatterns(constellationSatellites);
+
+            logs.add("🌐 === CONSTELLATION ANALYSIS ===");
+            logs.add("Satellites Analyzed: " + patterns.getSatelliteCount());
+            logs.add("Coordination Efficiency: " + String.format("%.1f%%", patterns.getCoordinationEfficiency() * 100));
+            logs.add("");
+            logs.add("📊 OVERALL TRENDS:");
+
+            for (Map.Entry<String, Double> trend : patterns.getOverallTrends().entrySet()) {
+                logs.add("   📈 " + trend.getKey() + ": " + String.format("%.1f%%", trend.getValue() * 100));
+            }
+
+            logs.add("");
+            logs.add("🌟 CONSTELLATION INSIGHTS:");
+            for (String insight : patterns.getConstellationInsights()) {
+                logs.add("   • " + insight);
+            }
+
+            logs.add("");
+            logs.add("✅ OPTIMAL FORMATIONS:");
+            for (String formation : patterns.getOptimalFormations()) {
+                logs.add("   🛰️ " + formation);
+            }
+
+            logs.add("==============================");
+
+        } catch (Exception e) {
+            logs.add("❌ Constellation analysis failed: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+
 }

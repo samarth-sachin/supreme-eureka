@@ -60,7 +60,7 @@ statement:
     | getSystemStatusStatement          #getSystemStatusStatementAlt
     | helpStatement                     #helpStatementAlt
 
-    // GOD-LEVEL COMMANDS
+    // Real-Time Data Commands
     | propagateUltraPreciseStatement    #propagateUltraPreciseStatementAlt
     | getRealTimeISSStatement           #getRealTimeISSStatementAlt
     | assessCollisionRiskStatement      #assessCollisionRiskStatementAlt
@@ -68,158 +68,40 @@ statement:
     | calculateRealTimeDragStatement    #calculateRealTimeDragStatementAlt
     | checkApiHealthStatement           #checkApiHealthStatementAlt
     | getSystemTelemetryStatement       #getSystemTelemetryStatementAlt
-    | detectAnomaliesStatement          #detectAnomaliesStatementAlt
     | predictMaintenanceStatement       #predictMaintenanceStatementAlt
     | planDeepSpaceMissionStatement     #planDeepSpaceMissionStatementAlt
+
+    // Optimization Commands
+    | testOptimizerStatement            #testOptimizerStatementAlt
+    | optimizeFormationStatement        #optimizeFormationStatementAlt
+    | optimizeMissionPlanStatement      #optimizeMissionPlanStatementAlt
+    | calculateAvoidanceStatement       #calculateAvoidanceStatementAlt
+
+    // Streaming Commands
+    | startStreamStatement              #startStreamStatementAlt
+    | stopStreamStatement               #stopStreamStatementAlt
+    | publishAlertStatement             #publishAlertStatementAlt
+
+    // AI Analytics Commands
+    | runAIAnalysisStatement            #runAIAnalysisStatementAlt
+    | detectAnomaliesStatement          #detectAnomaliesStatementAlt
+    | monitorRealTimeStatement          #monitorRealTimeStatementAlt
+    | generateAIMissionStatement        #generateAIMissionStatementAlt
+    | updateMLModelsStatement           #updateMLModelsStatementAlt
+    | evaluateModelsStatement           #evaluateModelsStatementAlt
+    | predictHealthStatement            #predictHealthStatementAlt
+    | analyzePatternsStatement          #analyzePatternsStatementAlt
+    | predictOptimalWindowsStatement    #predictOptimalWindowsStatementAlt
+    | forecastCollisionRiskStatement    #forecastCollisionRiskStatementAlt
+    | generateEmergencyPlanStatement    #generateEmergencyPlanStatementAlt
+    | analyzeConstellationStatement     #analyzeConstellationStatementAlt
     ;
 
-// --- GOD-LEVEL COMMAND DEFINITIONS ---
+// ===================================================================
+// COMMAND DEFINITIONS
+// ===================================================================
 
-// Ultra-precise propagation - propagateUltraPrecise iss 24.0;
-propagateUltraPreciseStatement:
-    'propagateUltraPrecise' ID NUMBER ';';
-
-// Real-time ISS position - getRealTimeISS;
-getRealTimeISSStatement:
-    'getRealTimeISS' ';';
-
-// Collision risk assessment - assessCollisionRisk iss 72;
-assessCollisionRiskStatement:
-    'assessCollisionRisk' ID NUMBER ';';
-
-// Current space weather - getCurrentSpaceWeather;
-getCurrentSpaceWeatherStatement:
-    'getCurrentSpaceWeather' ';';
-
-// Real-time atmospheric drag - calculateRealTimeDrag iss 408.0;
-calculateRealTimeDragStatement:
-    'calculateRealTimeDrag' ID NUMBER ';';
-
-// API health check - checkApiHealth;
-checkApiHealthStatement:
-    'checkApiHealth' ';';
-
-// System telemetry - getSystemTelemetry;
-getSystemTelemetryStatement:
-    'getSystemTelemetry' ';';
-
-// AI anomaly detection - detectAnomalies iss;
-detectAnomaliesStatement:
-    'detectAnomalies' ID ';';
-
-// Predictive maintenance - predictMaintenance iss 90;
-predictMaintenanceStatement:
-    'predictMaintenance' ID NUMBER ';';
-
-// Deep space mission planning - planDeepSpaceMission probe mars 2026;
-planDeepSpaceMissionStatement:
-    'planDeepSpaceMission' ID ID NUMBER ';';
-
-// --- SATELLITE DEPLOYMENT COMMANDS ---
-
-// Example: separate ISS from launcher;
-separationStatement:
-    'separate' ID 'from' 'launcher' ';';
-
-// Example: deploySolarArray ISS;
-solarArrayDeployStatement:
-    'deploySolarArray' ID ';';
-
-// Example: deployAntenna ISS primary;
-antennaDeployStatement:
-    'deployAntenna' ID ('primary' | 'secondary' | 'backup') ';';
-
-// Example: activateTransponder ISS band_s;
-transponderActivateStatement:
-    'activateTransponder' ID ID ';';
-
-// --- ATTITUDE AND ORBIT CONTROL ---
-
-// Example: setAttitude ISS nadir;
-setAttitudeStatement:
-    'setAttitude' ID ('nadir' | 'target' ID | 'sun' | 'inertial') ';';
-
-// Example: propagateNumerically ISS 24.0;
-propagateNumericallyStatement:
-    'propagateNumerically' ID NUMBER ';';
-
-// Example: fireThruster ISS north 5.0 seconds;
-thrusterFireStatement:
-    'fireThruster' ID ('north' | 'south' | 'east' | 'west' | 'forward' | 'backward') NUMBER 'seconds' ';';
-
-// Example: controlSpin ISS 2.5 rpm;
-spinControlStatement:
-    'controlSpin' ID NUMBER 'rpm' ';';
-
-// Example: momentumWheel ISS x_axis start;
-momentumWheelStatement:
-    'momentumWheel' ID ('x_axis' | 'y_axis' | 'z_axis') ('start' | 'stop' | 'adjust' NUMBER) ';';
-
-// Example: activateSensor ISS gyroscope;
-sensorControlStatement:
-    'activateSensor' ID ('gyroscope' | 'magnetometer' | 'sun_sensor' | 'star_tracker') ';';
-
-// --- PROPULSION SYSTEM ---
-
-// Example: engineBurn ISS apogee_motor 30.0 seconds;
-engineBurnStatement:
-    'engineBurn' ID ID NUMBER 'seconds' ';';
-
-// Example: propellantValve ISS fuel_line open;
-propellantValveStatement:
-    'propellantValve' ID ID ('open' | 'close') ';';
-
-// Example: activatePropulsion ISS;
-propulsionActivateStatement:
-    'activatePropulsion' ID ';';
-
-// --- PAYLOAD OPERATIONS ---
-
-// Example: activatePayload ISS camera; deactivatePayload ISS spectrometer;
-payloadActivateStatement:
-    ('activatePayload' | 'deactivatePayload') ID ID ';';
-
-// Example: configureInstrument ISS camera resolution 1024;
-instrumentConfigStatement:
-    'configureInstrument' ID ID ID NUMBER? ';';
-
-// Example: startDataDownlink ISS; stopDataDownlink ISS;
-dataDownlinkStatement:
-    ('startDataDownlink' | 'stopDataDownlink') ID ';';
-
-// --- POWER AND THERMAL CONTROL ---
-
-// Example: manageBattery ISS charge; manageBattery ISS discharge;
-batteryManageStatement:
-    'manageBattery' ID ('charge' | 'discharge' | 'monitor') ';';
-
-// Example: heaterControl ISS payload_bay on;
-heaterControlStatement:
-    'heaterControl' ID ID ('on' | 'off') ';';
-
-// Example: radiatorControl ISS primary extend;
-radiatorControlStatement:
-    'radiatorControl' ID ('primary' | 'secondary') ('extend' | 'retract') ';';
-
-// --- END-OF-LIFE AND CONTINGENCY ---
-
-// Example: executeRecovery ISS safe_mode;
-recoveryActionStatement:
-    'executeRecovery' ID ID ';';
-
-// Example: decommission ISS;
-decommissionStatement:
-    'decommission' ID ';';
-
-// Example: moveToGraveyardOrbit ISS;
-graveyardOrbitStatement:
-    'moveToGraveyardOrbit' ID ';';
-
-// Example: shutdownSystems ISS;
-systemShutdownStatement:
-    'shutdownSystems' ID ';';
-
-// --- EXISTING COMMANDS (UNCHANGED) ---
+// --- BASIC COMMANDS ---
 
 deployStatement:
     'deploy' ID 'with' 'id' NUMBER ';';
@@ -254,7 +136,88 @@ predictPassStatement:
 maneuverStatement:
     'maneuver' ID 'burn' NUMBER 'in' ID 'direction' ';';
 
-// --- ANALYSIS COMMANDS ---
+// --- ATTITUDE AND ORBIT CONTROL ---
+
+setAttitudeStatement:
+    'setAttitude' ID ('nadir' | 'target' ID | 'sun' | 'inertial') ';';
+
+propagateNumericallyStatement:
+    'propagateNumerically' ID NUMBER ';';
+
+thrusterFireStatement:
+    'fireThruster' ID ('north' | 'south' | 'east' | 'west' | 'forward' | 'backward') NUMBER 'seconds' ';';
+
+spinControlStatement:
+    'controlSpin' ID NUMBER 'rpm' ';';
+
+momentumWheelStatement:
+    'momentumWheel' ID ('x_axis' | 'y_axis' | 'z_axis') ('start' | 'stop' | 'adjust' NUMBER) ';';
+
+sensorControlStatement:
+    'activateSensor' ID ('gyroscope' | 'magnetometer' | 'sun_sensor' | 'star_tracker') ';';
+
+// --- SATELLITE DEPLOYMENT ---
+
+separationStatement:
+    'separate' ID 'from' 'launcher' ';';
+
+solarArrayDeployStatement:
+    'deploySolarArray' ID ';';
+
+antennaDeployStatement:
+    'deployAntenna' ID ('primary' | 'secondary' | 'backup') ';';
+
+transponderActivateStatement:
+    'activateTransponder' ID ID ';';
+
+// --- PROPULSION SYSTEM ---
+
+engineBurnStatement:
+    'engineBurn' ID ID NUMBER 'seconds' ';';
+
+propellantValveStatement:
+    'propellantValve' ID ID ('open' | 'close') ';';
+
+propulsionActivateStatement:
+    'activatePropulsion' ID ';';
+
+// --- PAYLOAD OPERATIONS ---
+
+payloadActivateStatement:
+    ('activatePayload' | 'deactivatePayload') ID ID ';';
+
+instrumentConfigStatement:
+    'configureInstrument' ID ID ID NUMBER? ';';
+
+dataDownlinkStatement:
+    ('startDataDownlink' | 'stopDataDownlink') ID ';';
+
+// --- POWER AND THERMAL CONTROL ---
+
+batteryManageStatement:
+    'manageBattery' ID ('charge' | 'discharge' | 'monitor') ';';
+
+heaterControlStatement:
+    'heaterControl' ID ID ('on' | 'off') ';';
+
+radiatorControlStatement:
+    'radiatorControl' ID ('primary' | 'secondary') ('extend' | 'retract') ';';
+
+// --- END-OF-LIFE AND CONTINGENCY ---
+
+recoveryActionStatement:
+    'executeRecovery' ID ID ';';
+
+decommissionStatement:
+    'decommission' ID ';';
+
+graveyardOrbitStatement:
+    'moveToGraveyardOrbit' ID ';';
+
+systemShutdownStatement:
+    'shutdownSystems' ID ';';
+
+// --- ADVANCED ANALYSIS ---
 
 determineOrbitStatement:
     'determineOrbit' ID STRING ';';
@@ -274,7 +237,106 @@ getSystemStatusStatement:
 helpStatement:
     'help' ID? ';';
 
+// --- REAL-TIME DATA COMMANDS ---
+
+propagateUltraPreciseStatement:
+    'propagateUltraPrecise' ID NUMBER ';';
+
+getRealTimeISSStatement:
+    'getRealTimeISS' ';';
+
+assessCollisionRiskStatement:
+    'assessCollisionRisk' ID NUMBER ';';
+
+getCurrentSpaceWeatherStatement:
+    'getCurrentSpaceWeather' ';';
+
+calculateRealTimeDragStatement:
+    'calculateRealTimeDrag' ID NUMBER ';';
+
+checkApiHealthStatement:
+    'checkApiHealth' ';';
+
+getSystemTelemetryStatement:
+    'getSystemTelemetry' ';';
+
+predictMaintenanceStatement:
+    'predictMaintenance' ID NUMBER ';';
+
+planDeepSpaceMissionStatement:
+    'planDeepSpaceMission' ID ID NUMBER ';';
+
+// --- OPTIMIZATION COMMANDS ---
+
+testOptimizerStatement:
+    'testOptimizer' ';';
+
+optimizeFormationStatement:
+    'optimizeFormation' '[' idList ']' ID NUMBER ';';
+
+optimizeMissionPlanStatement:
+    'optimizeMissionPlan' NUMBER 'hours' ';';
+
+calculateAvoidanceStatement:
+    'calculateAvoidance' ID ID ';';
+
+// --- STREAMING COMMANDS ---
+
+startStreamStatement:
+    'startStream' ID ';';
+
+stopStreamStatement:
+    'stopStream' ID ';';
+
+publishAlertStatement:
+    'publishAlert' ID ID STRING ';';
+
+// --- AI ANALYTICS COMMANDS ---
+
+runAIAnalysisStatement:
+    'runAIAnalysis' ID ';';
+
+detectAnomaliesStatement:
+    'detectAnomalies' ID ';';
+
+monitorRealTimeStatement:
+    'monitorRealTime' ID ';';
+
+generateAIMissionStatement:
+    'generateAIMission' ID ID NUMBER ';';
+
+updateMLModelsStatement:
+    'updateMLModels' ID ';';
+
+evaluateModelsStatement:
+    'evaluateModels' ';';
+
+predictHealthStatement:
+    'predictHealth' ID ';';
+
+analyzePatternsStatement:
+    'analyzePatterns' ID ';';
+
+predictOptimalWindowsStatement:
+    'predictOptimalWindows' ID ';';
+
+forecastCollisionRiskStatement:
+    'forecastCollisionRisk' ID NUMBER ';';
+
+generateEmergencyPlanStatement:
+    'generateEmergencyPlan' ID ';';
+
+analyzeConstellationStatement:
+    'analyzeConstellation' ';';
+
+// --- HELPER RULES ---
+
+// Helper rule for list of IDs
+idList:
+    ID (',' ID)*;
+
 // --- LEXER TOKENS ---
+
 ID:     [a-zA-Z_][a-zA-Z0-9_]* ;
 NUMBER: [0-9]+ ('.' [0-9]+)? ;
 STRING: '"' (~["\\] | '\\' .)* '"' ;

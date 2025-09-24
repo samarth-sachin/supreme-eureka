@@ -1,5 +1,6 @@
 package com.dsl.simulator.Service;
 
+import com.dsl.simulator.OptaPlaner.ConstellationOptimizer;
 import com.dsl.simulator.Orekit.VisibilityUtil;
 import com.dsl.simulator.Predictor.PassPredictor;
 import com.dsl.simulator.Product.GroundStation;
@@ -1343,4 +1344,13 @@ public class MissionControlService {
         }
         return Optional.empty();
     }
+    public String testOptaPlanner() {
+        try {
+            ConstellationOptimizer optimizer = new ConstellationOptimizer();
+            return "✅ OptaPlanner integration working!";
+        } catch (Exception e) {
+            return "❌ OptaPlanner error: " + e.getMessage();
+        }
+    }
+
 }

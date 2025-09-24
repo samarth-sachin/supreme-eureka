@@ -3,6 +3,7 @@ package com.dsl.simulator.controller;
 import com.dsl.simulator.Runner.SatOpsRunner;
 import com.dsl.simulator.SatOpsLexer;
 import com.dsl.simulator.SatOpsParser;
+import com.dsl.simulator.Streaming.TelemetryStreamer;
 import com.dsl.simulator.error.DescriptiveErrorListener; // Import the new listener
 import com.dsl.simulator.Service.MissionControlService;
 import com.dsl.simulator.Service.SatOpsVisitor;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class DslController {
 
     private final MissionControlService missionControlService;
+    private final TelemetryStreamer telemetryStreamer;
     private final SatOpsRunner runner;
 
     @PostMapping("/run")
@@ -39,7 +41,7 @@ public class DslController {
             }
 
 
-            SatOpsVisitor visitor = new SatOpsVisitor(missionControlService);
+            SatOpsVisitor visitor = new SatOpsVisitor(missionControlService,telemetryStreamer);
             visitor.visit(tree);
             visitor.printLogs();
 
