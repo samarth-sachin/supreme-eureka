@@ -1,7 +1,5 @@
 package com.dsl.simulator.Service;
 
-import com.dsl.simulator.OptaPlaner.ConstellationOptimizer;
-import com.dsl.simulator.OptaPlaner.FormationOptimizationResult;
 import com.dsl.simulator.Orekit.SatellitePropagation;
 import com.dsl.simulator.Product.GroundStation;
 import com.dsl.simulator.Product.Satellite;
@@ -10,13 +8,14 @@ import com.dsl.simulator.SatOpsParser;
 import com.dsl.simulator.Service.MissionControlService.SatelliteSubsystems;
 import com.dsl.simulator.Streaming.SatelliteAlert;
 import com.dsl.simulator.Streaming.TelemetryStreamer;
-import org.springframework.kafka.core.KafkaTemplate;
 import com.dsl.simulator.AI.AIMissionController;
 import com.dsl.simulator.AI.AnomalyDetectionService;
 import com.dsl.simulator.AI.IntelligentDecisionEngine;
 import com.dsl.simulator.AI.MachineLearningService;
 import com.dsl.simulator.AI.PatternRecognitionService;
 import com.dsl.simulator.AI.*;
+import com.dsl.simulator.OptaPlanner.OptaPlannerMissionService;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,10 +29,14 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
     private final TelemetryStreamer telemetryStreamer;
     private final List<String> logs = new ArrayList<>();
     private SatellitePropagation satellitePropagation = new SatellitePropagation();
+    @Autowired
+    private OptaPlannerMissionService optaPlannerService;
+    private final ConstellationOptimizer constellationOptimizer;
 
-    public SatOpsVisitor(MissionControlService missionControlService,TelemetryStreamer telemetryStreamer) {
+    public SatOpsVisitor(MissionControlService missionControlService,TelemetryStreamer telemetryStreamer,ConstellationOptimizer constellationOptimizer) {
         this.missionControlService = missionControlService;
         this.telemetryStreamer = telemetryStreamer;
+        this.constellationOptimizer = constellationOptimizer;
     }
 
     public List<String> getLogs() {
@@ -991,63 +994,7 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
                         "Use 'help' to see all available commands.";
         }
     }
-    @Override
-    public Void visitTestOptimizerStatement(SatOpsParser.TestOptimizerStatementContext ctx) {
-        String result = missionControlService.testOptaPlanner();
-        logs.add("🧪 === OPTIMIZER TEST ===");
-        logs.add(result);
-        logs.add("========================");
-        return null;
-    }
-    // Add these methods to SatOpsVisitor.java
 
-    @Override
-    public Void visitOptimizeFormationStatement(SatOpsParser.OptimizeFormationStatementContext ctx) {
-        List<String> satelliteIds = new ArrayList<>();
-        for (var idToken : ctx.idList().ID()) {
-            satelliteIds.add(idToken.getText());
-        }
-        String formationType = ctx.ID().getText();
-        double separation = Double.parseDouble(ctx.NUMBER().getText());
-
-        ConstellationOptimizer optimizer = new ConstellationOptimizer();
-        FormationOptimizationResult result = optimizer.optimizeFormationFlying(
-                satelliteIds, formationType, separation);
-
-        logs.add("🛰️ === FORMATION OPTIMIZATION ===");
-        if (result.isSuccess()) {
-            logs.add("Formation Type: " + result.getFormationType());
-            logs.add("Satellites: " + satelliteIds.size());
-            logs.add("Fuel Cost: " + result.getTotalFuelCost() + " kg");
-            logs.add("Stability Score: " + result.getStabilityScore());
-            logs.add("Status: " + result.getMessage());
-        } else {
-            logs.add("❌ " + result.getMessage());
-        }
-        logs.add("===============================");
-        return null;
-    }
-
-    @Override
-    public Void visitOptimizeMissionPlanStatement(SatOpsParser.OptimizeMissionPlanStatementContext ctx) {
-        int hours = Integer.parseInt(ctx.NUMBER().getText());
-
-        ConstellationOptimizer optimizer = new ConstellationOptimizer();
-        String result = optimizer.optimizeMissionPlan(hours);
-        logs.add(result);
-        return null;
-    }
-
-    @Override
-    public Void visitCalculateAvoidanceStatement(SatOpsParser.CalculateAvoidanceStatementContext ctx) {
-        String satelliteId = ctx.ID(0).getText();
-        String threatId = ctx.ID(1).getText();
-
-        ConstellationOptimizer optimizer = new ConstellationOptimizer();
-        String result = optimizer.calculateAvoidanceManeuver(satelliteId, threatId);
-        logs.add(result);
-        return null;
-    }
     @Override
     public Void visitStartStreamStatement(SatOpsParser.StartStreamStatementContext ctx) {
         String satelliteId = ctx.ID().getText();
@@ -1501,5 +1448,142 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
         return null;
     }
 
+    @Override
+    public Void visitTestOptimizerStatement(SatOpsParser.TestOptimizerStatementContext ctx) {
+        try {
+            logs.add("🔥 === REAL OPTAPLANNER CONSTRAINT SOLVER TEST ===");
 
+            // Test real constraint solving
+            String result = runRealOptaPlannerTest();
+            logs.add(result);
+
+        } catch (Exception e) {
+            logs.add("❌ Real OptaPlanner test failed: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Real formation optimization with OptaPlanner
+     */
+    @Override
+    public Void visitOptimizeFormationStatement(SatOpsParser.OptimizeFormationStatementContext ctx) {
+        List<String> satelliteIds = new ArrayList<>();
+
+        // Parse satellite IDs from context
+        for (int i = 0; i < ctx.idList().ID().size(); i++) {
+            satelliteIds.add(ctx.idList().ID(i).getText());
+        }
+
+        String formationType = ctx.ID().getText();
+        double separation = Double.parseDouble(ctx.NUMBER().getText());
+
+        try {
+            logs.add("🛰️ === REAL OPTAPLANNER FORMATION OPTIMIZATION ===");
+            logs.add("Satellites: " + satelliteIds);
+            logs.add("Formation: " + formationType);
+            logs.add("Separation: " + separation + " km");
+            logs.add("");
+
+            String result = constellationOptimizer.optimizeFormation(satelliteIds, formationType, separation);
+            logs.add(result);
+
+        } catch (Exception e) {
+            logs.add("❌ Formation optimization failed: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Real mission plan optimization with OptaPlanner
+     */
+    @Override
+    public Void visitOptimizeMissionPlanStatement(SatOpsParser.OptimizeMissionPlanStatementContext ctx) {
+        int durationHours = Integer.parseInt(ctx.NUMBER().getText());
+
+        try {
+            logs.add("📋 === REAL OPTAPLANNER MISSION PLANNING ===");
+            logs.add("Duration: " + durationHours + " hours");
+            logs.add("");
+
+            String result = constellationOptimizer.optimizeMissionPlan(durationHours);
+            logs.add(result);
+
+        } catch (Exception e) {
+            logs.add("❌ Mission planning failed: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    // Helper method for testing
+    private String runRealOptaPlannerTest() {
+        try {
+            // Create test satellites
+            List<com.dsl.simulator.OptaPlanner.SatelliteResource> satellites = List.of(
+                    com.dsl.simulator.OptaPlanner.SatelliteResource.builder()
+                            .satelliteId("TEST_SAT_1")
+                            .name("Test Satellite 1")
+                            .maxPower(1000)
+                            .maxFuel(500)
+                            .operational(true)
+                            .build(),
+                    com.dsl.simulator.OptaPlanner.SatelliteResource.builder()
+                            .satelliteId("TEST_SAT_2")
+                            .name("Test Satellite 2")
+                            .maxPower(1200)
+                            .maxFuel(600)
+                            .operational(true)
+                            .build()
+            );
+
+            // Create test tasks
+            List<com.dsl.simulator.OptaPlanner.MissionTask> tasks = List.of(
+                    com.dsl.simulator.OptaPlanner.MissionTask.builder()
+                            .taskId("TEST_TASK_1")
+                            .taskType("EARTH_OBSERVATION")
+                            .durationMinutes(120)
+                            .requiredPower(300)
+                            .requiredFuel(20)
+                            .build(),
+                    com.dsl.simulator.OptaPlanner.MissionTask.builder()
+                            .taskId("TEST_TASK_2")
+                            .taskType("DATA_RELAY")
+                            .durationMinutes(90)
+                            .requiredPower(250)
+                            .requiredFuel(15)
+                            .build(),
+                    com.dsl.simulator.OptaPlanner.MissionTask.builder()
+                            .taskId("TEST_TASK_3")
+                            .taskType("SYSTEM_CHECK")
+                            .durationMinutes(60)
+                            .requiredPower(150)
+                            .requiredFuel(10)
+                            .build()
+            );
+
+            // Create time slots
+            List<com.dsl.simulator.OptaPlanner.TimeSlot> timeSlots = List.of(
+                    com.dsl.simulator.OptaPlanner.TimeSlot.builder()
+                            .startHour(8)
+                            .endHour(10)
+                            .build(),
+                    com.dsl.simulator.OptaPlanner.TimeSlot.builder()
+                            .startHour(14)
+                            .endHour(16)
+                            .build()
+            );
+
+            // Solve with OptaPlanner
+            com.dsl.simulator.OptaPlanner.MissionPlanningProblem solution =
+                    optaPlannerService.solveMissionPlan(tasks, satellites, timeSlots);
+
+            return optaPlannerService.formatSolutionResults(solution);
+
+        } catch (Exception e) {
+            return "❌ OptaPlanner test failed: " + e.getMessage();
+        }
+    }
 }

@@ -60,7 +60,7 @@
 		<dependency>
 			<groupId>org.optaplanner</groupId>
 			<artifactId>optaplanner-spring-boot-starter</artifactId>
-			<version>8.44.0.Final</version>
+			<version>9.44.0.Final</version>
 		</dependency>
 		<!-- Add to pom.xml -->
 		<dependency>

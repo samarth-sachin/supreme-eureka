@@ -3,6 +3,7 @@ package com.dsl.simulator.controller;
 import com.dsl.simulator.Runner.SatOpsRunner;
 import com.dsl.simulator.SatOpsLexer;
 import com.dsl.simulator.SatOpsParser;
+import com.dsl.simulator.Service.ConstellationOptimizer;
 import com.dsl.simulator.Streaming.TelemetryStreamer;
 import com.dsl.simulator.error.DescriptiveErrorListener; // Import the new listener
 import com.dsl.simulator.Service.MissionControlService;
@@ -20,6 +21,7 @@ public class DslController {
     private final MissionControlService missionControlService;
     private final TelemetryStreamer telemetryStreamer;
     private final SatOpsRunner runner;
+    private final ConstellationOptimizer optimizer;
 
     @PostMapping("/run")
     public String runDSL(@RequestBody String script) {
@@ -41,7 +43,7 @@ public class DslController {
             }
 
 
-            SatOpsVisitor visitor = new SatOpsVisitor(missionControlService,telemetryStreamer);
+            SatOpsVisitor visitor = new SatOpsVisitor(missionControlService,telemetryStreamer,optimizer);
             visitor.visit(tree);
             visitor.printLogs();
 

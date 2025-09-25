@@ -1,6 +1,5 @@
 package com.dsl.simulator.Service;
 
-import com.dsl.simulator.OptaPlaner.ConstellationOptimizer;
 import com.dsl.simulator.Orekit.VisibilityUtil;
 import com.dsl.simulator.Predictor.PassPredictor;
 import com.dsl.simulator.Product.GroundStation;
@@ -13,7 +12,6 @@ import org.orekit.attitudes.AttitudeProvider;
 import org.orekit.attitudes.BodyCenterPointing;
 import org.orekit.attitudes.InertialProvider;
 import org.orekit.attitudes.NadirPointing;
-import org.orekit.attitudes.TargetPointing;
 import org.orekit.bodies.CelestialBodyFactory;
 import org.orekit.bodies.Ellipsoid;
 import org.orekit.bodies.OneAxisEllipsoid;
@@ -24,7 +22,6 @@ import org.orekit.estimation.measurements.Position;
 import org.orekit.forces.ForceModel;
 import org.orekit.forces.drag.DragForce;
 import org.orekit.forces.drag.IsotropicDrag;
-import org.orekit.forces.BoxAndSolarArraySpacecraft;
 import org.orekit.forces.radiation.SolarRadiationPressure;
 import org.orekit.forces.gravity.Relativity;
 import org.orekit.models.earth.atmosphere.HarrisPriester;
@@ -57,7 +54,6 @@ import org.orekit.utils.IERSConventions;
 import org.orekit.utils.PVCoordinates;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -1344,13 +1340,6 @@ public class MissionControlService {
         }
         return Optional.empty();
     }
-    public String testOptaPlanner() {
-        try {
-            ConstellationOptimizer optimizer = new ConstellationOptimizer();
-            return "✅ OptaPlanner integration working!";
-        } catch (Exception e) {
-            return "❌ OptaPlanner error: " + e.getMessage();
-        }
-    }
+
 
 }

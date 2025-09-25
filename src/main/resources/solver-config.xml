@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<solver>
+    <solutionClass>com.dsl.simulator.OptaPlanner.MissionPlanningProblem</solutionClass>
+    <entityClass>com.dsl.simulator.OptaPlanner.MissionTask</entityClass>
+    <constraintProviderClass>com.dsl.simulator.OptaPlanner.MissionConstraintProvider</constraintProviderClass>
+
+    <!-- FORCE QUICK TERMINATION -->
+    <termination>
+        <secondsSpentLimit>3</secondsSpentLimit>
+        <bestScoreLimit>0hard/0soft</bestScoreLimit>  <!-- Stop when feasible -->
+    </termination>
+
+    <!-- SIMPLIFIED SOLVER PHASES -->
+    <constructionHeuristic>
+        <constructionHeuristicType>FIRST_FIT</constructionHeuristicType>
+    </constructionHeuristic>
+
+</solver>
