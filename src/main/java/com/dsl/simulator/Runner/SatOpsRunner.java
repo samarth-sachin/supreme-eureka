@@ -1,5 +1,6 @@
 package com.dsl.simulator.Runner;
 
+import com.dsl.simulator.RealAI.*;
 import com.dsl.simulator.SatOpsLexer;
 import com.dsl.simulator.SatOpsParser;
 import com.dsl.simulator.Service.ConstellationOptimizer;
@@ -21,7 +22,13 @@ public class SatOpsRunner {
     // 3. Define the required service dependency
     private final MissionControlService missionControlService;
     private final TelemetryStreamer telemetryStreamer;
-    private final ConstellationOptimizer constellationOptimizer;
+    private final ConstellationOptimizer optimizer;
+    private final RealAIService realAIService; // NEW
+    private final SatelliteHealthPredictor healthPredictor; // NEW
+    private final AnomalyDetectionNetwork anomalyDetector; // NEW
+    private final PatternRecognitionLSTM patternAnalyzer; // NEW
+    private final CollisionRiskClassifier collisionClassifier;
+
 
     public String runFromResource(String filename) {
         try {
@@ -37,7 +44,7 @@ public class SatOpsRunner {
             SatOpsParser.ProgramContext tree = parser.program();
 
 
-            SatOpsVisitor visitor = new SatOpsVisitor(missionControlService,telemetryStreamer,constellationOptimizer);
+            SatOpsVisitor visitor = new SatOpsVisitor(missionControlService, telemetryStreamer, optimizer,realAIService,healthPredictor,anomalyDetector,patternAnalyzer,collisionClassifier);
             visitor.visit(tree);
 
             return String.join("\n", visitor.getLogs());

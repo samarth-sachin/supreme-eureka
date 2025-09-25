@@ -1,8 +1,9 @@
 package com.dsl.simulator.Service;
-
 import com.dsl.simulator.Orekit.SatellitePropagation;
 import com.dsl.simulator.Product.GroundStation;
 import com.dsl.simulator.Product.Satellite;
+import com.dsl.simulator.RealAI.*;
+import com.dsl.simulator.RealAI.SatelliteHealthPredictor;
 import com.dsl.simulator.SatOpsBaseVisitor;
 import com.dsl.simulator.SatOpsParser;
 import com.dsl.simulator.Service.MissionControlService.SatelliteSubsystems;
@@ -32,11 +33,22 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
     @Autowired
     private OptaPlannerMissionService optaPlannerService;
     private final ConstellationOptimizer constellationOptimizer;
+    private final RealAIService realAIService; // NEW
+    private final SatelliteHealthPredictor healthPredictor; // NEW
+    private final AnomalyDetectionNetwork anomalyDetector; // NEW
+    private final PatternRecognitionLSTM patternAnalyzer; // NEW
+    private final CollisionRiskClassifier collisionClassifier;
 
-    public SatOpsVisitor(MissionControlService missionControlService,TelemetryStreamer telemetryStreamer,ConstellationOptimizer constellationOptimizer) {
+
+    public SatOpsVisitor(MissionControlService missionControlService, TelemetryStreamer telemetryStreamer, ConstellationOptimizer constellationOptimizer, RealAIService realAIService, SatelliteHealthPredictor healthPredictor, AnomalyDetectionNetwork anomalyDetector, PatternRecognitionLSTM patternAnalyzer, CollisionRiskClassifier collisionClassifier) {
         this.missionControlService = missionControlService;
         this.telemetryStreamer = telemetryStreamer;
         this.constellationOptimizer = constellationOptimizer;
+        this.realAIService = realAIService;
+        this.healthPredictor = healthPredictor;
+        this.anomalyDetector = anomalyDetector;
+        this.patternAnalyzer = patternAnalyzer;
+        this.collisionClassifier = collisionClassifier;
     }
 
     public List<String> getLogs() {
@@ -1034,67 +1046,70 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
     /**
      * Run complete AI analysis
      */
+    /**
+     * Complete AI analysis using ALL real neural networks
+     */
     @Override
     public Void visitRunAIAnalysisStatement(SatOpsParser.RunAIAnalysisStatementContext ctx) {
         String satelliteId = ctx.ID().getText();
 
         try {
-            // Create AI services (in real implementation, these would be injected)
-            PredictiveAnalyticsService predictiveService = new PredictiveAnalyticsService();
-            AnomalyDetectionService anomalyService = new AnomalyDetectionService();
-            PatternRecognitionService patternService = new PatternRecognitionService();
-            IntelligentDecisionEngine decisionEngine = new IntelligentDecisionEngine();
-            MachineLearningService mlService = new MachineLearningService();
+            logs.add("🧠 === REAL NEURAL NETWORK AI ANALYSIS ===");
+            logs.add("Satellite: " + satelliteId);
+            logs.add("Running complete AI suite with trained models...");
+            logs.add("");
 
-            AIMissionController aiController = new AIMissionController(
-                    predictiveService, anomalyService, patternService, decisionEngine, mlService);
-
-            String result = aiController.runCompleteAIAnalysis(satelliteId);
-            logs.add(result);
+            String analysisResult = realAIService.runCompleteAIAnalysis(satelliteId);
+            logs.add(analysisResult);
 
         } catch (Exception e) {
-            logs.add("❌ AI Analysis failed: " + e.getMessage());
+            logs.add("❌ Real AI analysis failed: " + e.getMessage());
+//            log.error("AI analysis error for satellite: {}", satelliteId, e);
         }
 
         return null;
     }
 
+
     /**
      * Real-time anomaly detection
+     */
+    /**
+     * Real autoencoder anomaly detection - REPLACE your existing detectAnomalies method
      */
     @Override
     public Void visitDetectAnomaliesStatement(SatOpsParser.DetectAnomaliesStatementContext ctx) {
         String satelliteId = ctx.ID().getText();
 
         try {
-            AnomalyDetectionService anomalyService = new AnomalyDetectionService();
-            List<Anomaly> anomalies = anomalyService.detectAnomalies(satelliteId);
+            logs.add("🚨 === REAL AUTOENCODER ANOMALY DETECTION ===");
+            logs.add("Satellite: " + satelliteId);
+            logs.add("");
+
+            // Generate realistic sensor data
+            double[] sensorData = new double[8];
+            for (int i = 0; i < 8; i++) {
+                sensorData[i] = 0.5 + Math.random() * 0.4 + (Math.random() > 0.9 ? 0.3 : 0);
+            }
+
+            List<String> anomalies = anomalyDetector.detectAnomalies(satelliteId, sensorData);
+            double detectionAccuracy = anomalyDetector.getDetectionAccuracy();
+
+            logs.add("🎯 AUTOENCODER RESULTS:");
+            logs.add("Detection Accuracy: " + String.format("%.1f%%", detectionAccuracy * 100));
+            logs.add("Status: " + (anomalies.isEmpty() ? "All systems nominal" : "Anomalies detected"));
+            logs.add("");
 
             if (anomalies.isEmpty()) {
-                logs.add("✅ === ANOMALY DETECTION ===");
-                logs.add("Satellite: " + satelliteId);
-                logs.add("Status: All systems nominal");
-                logs.add("Confidence: 94.7%");
-                logs.add("========================");
+                logs.add("✅ No anomalies detected - All systems nominal");
             } else {
-                logs.add("🚨 === ANOMALY DETECTION RESULTS ===");
-                logs.add("Satellite: " + satelliteId);
-                logs.add("Anomalies Detected: " + anomalies.size());
-                logs.add("");
-
-                for (Anomaly anomaly : anomalies) {
-                    String severity = anomaly.getSeverity().equals("CRITICAL") ? "🔴" :
-                            anomaly.getSeverity().equals("HIGH") ? "🟠" : "🟡";
-                    logs.add(severity + " " + anomaly.getType() + ":");
-                    logs.add("   Parameter: " + anomaly.getParameter());
-                    logs.add("   Current: " + anomaly.getCurrentValue());
-                    logs.add("   Expected: " + anomaly.getExpectedValue());
-                    logs.add("   Confidence: " + String.format("%.1f%%", anomaly.getConfidence() * 100));
-                    logs.add("   Recommendation: " + anomaly.getRecommendation());
-                    logs.add("");
+                logs.add("🚨 REAL-TIME ANOMALY ALERT:");
+                for (String anomaly : anomalies) {
+                    logs.add("⚠️ " + anomaly);
                 }
-                logs.add("=================================");
             }
+
+            logs.add("===============================");
 
         } catch (Exception e) {
             logs.add("❌ Anomaly detection failed: " + e.getMessage());
@@ -1102,6 +1117,7 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
 
         return null;
     }
+
 
     /**
      * Monitor real-time anomalies
@@ -1199,76 +1215,91 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
     /**
      * Predict satellite health using AI
      */
+    /**
+     * Real neural network health prediction - REPLACE your existing predictHealth method
+     */
     @Override
     public Void visitPredictHealthStatement(SatOpsParser.PredictHealthStatementContext ctx) {
         String satelliteId = ctx.ID().getText();
 
         try {
-            PredictiveAnalyticsService predictiveService = new PredictiveAnalyticsService();
-            HealthPrediction prediction = predictiveService.predictSatelliteHealth(satelliteId);
-
-            logs.add("🔮 === HEALTH PREDICTION ===");
+            logs.add("🔮 === REAL NEURAL NETWORK HEALTH PREDICTION ===");
             logs.add("Satellite: " + satelliteId);
-            logs.add("Overall Health: " + String.format("%.1f%%", prediction.getOverallHealth() * 100));
-            logs.add("Prediction Confidence: " + String.format("%.1f%%", prediction.getPredictionConfidence() * 100));
             logs.add("");
-            logs.add("📊 SYSTEM BREAKDOWN:");
 
-            for (Map.Entry<String, Double> system : prediction.getSystemHealth().entrySet()) {
-                String status = system.getValue() > 0.9 ? "✅" : system.getValue() > 0.7 ? "⚠️" : "🔴";
-                logs.add("   " + status + " " + system.getKey() + ": " +
-                        String.format("%.1f%%", system.getValue() * 100));
-            }
+            // Generate realistic telemetry data
+            double[] telemetryData = {
+                    0.85 + Math.random() * 0.1,  // Power
+                    20 + Math.random() * 10,     // Temperature
+                    0.9 + Math.random() * 0.05,  // Fuel
+                    408 + Math.random() * 5,     // Altitude
+                    Math.random() * 360,         // Solar angle
+                    0.88 + Math.random() * 0.05  // Battery
+            };
 
-            if (!prediction.getPredictedFailures().isEmpty()) {
-                logs.add("");
-                logs.add("🚨 PREDICTED ISSUES:");
-                for (PredictedFailure failure : prediction.getPredictedFailures()) {
-                    logs.add("   ⚠️ " + failure.getComponent() + " failure in " +
-                            failure.getDaysUntilFailure() + " days");
-                    logs.add("      Confidence: " + String.format("%.1f%%", failure.getConfidence() * 100));
-                    logs.add("      Impact: " + failure.getImpact());
-                }
-            }
+            Map<String, Double> healthScores = healthPredictor.predictSatelliteHealth(satelliteId, telemetryData);
+            double modelAccuracy = healthPredictor.getModelAccuracy();
+
+            logs.add("🎯 NEURAL NETWORK RESULTS:");
+            logs.add("Training Accuracy: " + String.format("%.1f%%", modelAccuracy * 100));
+            logs.add("");
+
+            double overallHealth = healthScores.values().stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+            logs.add("📊 HEALTH PREDICTION RESULTS:");
+            logs.add("Overall Health: " + String.format("%.1f%%", overallHealth * 100));
+            logs.add("");
+
+            logs.add("📋 SUBSYSTEM HEALTH (Neural Network Output):");
+            healthScores.forEach((system, score) -> {
+                String status = score > 0.8 ? "✅" : score > 0.6 ? "⚠️" : "❌";
+                logs.add("   " + status + " " + system + ": " + String.format("%.1f%%", score * 100));
+            });
 
             logs.add("========================");
 
         } catch (Exception e) {
-            logs.add("❌ Health prediction failed: " + e.getMessage());
+            logs.add("❌ Neural network health prediction failed: " + e.getMessage());
         }
 
         return null;
     }
 
+
     /**
      * Analyze behavioral patterns
+     */
+    /**
+     * Real LSTM pattern analysis - REPLACE your existing analyzePatterns method
      */
     @Override
     public Void visitAnalyzePatternsStatement(SatOpsParser.AnalyzePatternsStatementContext ctx) {
         String satelliteId = ctx.ID().getText();
 
         try {
-            PatternRecognitionService patternService = new PatternRecognitionService();
-            PatternAnalysis patterns = patternService.analyzePatterns(satelliteId);
-
-            logs.add("📊 === PATTERN ANALYSIS ===");
+            logs.add("📊 === REAL LSTM PATTERN ANALYSIS ===");
             logs.add("Satellite: " + satelliteId);
-            logs.add("Analysis Confidence: " + String.format("%.1f%%", patterns.getAnalysisConfidence() * 100));
-            logs.add("Pattern Stability: " + String.format("%.1f%%", patterns.getPatternStability() * 100));
             logs.add("");
-            logs.add("📈 PERFORMANCE TRENDS:");
 
-            for (Map.Entry<String, Double> trend : patterns.getPerformanceTrends().entrySet()) {
-                String arrow = trend.getValue() > 0 ? "📈" : trend.getValue() < 0 ? "📉" : "➡️";
-                logs.add("   " + arrow + " " + trend.getKey() + ": " +
-                        String.format("%+.2f%% change", trend.getValue() * 100));
+            // Generate realistic time series data
+            double[][] timeSeriesData = new double[4][24];
+            for (int hour = 0; hour < 24; hour++) {
+                timeSeriesData[0][hour] = 0.8 + Math.sin(hour * Math.PI / 12) * 0.2;
+                timeSeriesData[1][hour] = 0.5 + Math.cos(hour * Math.PI / 12) * 0.3;
+                timeSeriesData[2][hour] = hour % 6 < 2 ? 0.9 : 0.4;
+                timeSeriesData[3][hour] = (hour * 15.0) / 360.0;
             }
 
+            Map<String, Object> patterns = patternAnalyzer.analyzePatterns(satelliteId, timeSeriesData);
+            double modelAccuracy = patternAnalyzer.getModelAccuracy();
+
+            logs.add("🎯 LSTM RESULTS:");
+            logs.add("Sequence Accuracy: " + String.format("%.1f%%", modelAccuracy * 100));
             logs.add("");
+
+            @SuppressWarnings("unchecked")
+            List<String> insights = (List<String>) patterns.get("behavioralInsights");
             logs.add("💡 BEHAVIORAL INSIGHTS:");
-            for (String insight : patterns.getBehavioralInsights()) {
-                logs.add("   • " + insight);
-            }
+            insights.forEach(insight -> logs.add("   • " + insight));
 
             logs.add("======================");
 
@@ -1317,44 +1348,46 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
     /**
      * Forecast collision risk
      */
+    /**
+     * Real collision risk neural classifier - REPLACE your existing forecastCollisionRisk method
+     */
     @Override
     public Void visitForecastCollisionRiskStatement(SatOpsParser.ForecastCollisionRiskStatementContext ctx) {
         String satelliteId = ctx.ID().getText();
-        int forecastDays = Integer.parseInt(ctx.NUMBER().getText());
+        int days = Integer.parseInt(ctx.NUMBER().getText());
 
         try {
-            PredictiveAnalyticsService predictiveService = new PredictiveAnalyticsService();
-            CollisionRiskForecast forecast = predictiveService.predictCollisionRisk(satelliteId, forecastDays);
-
-            logs.add("⚠️ === COLLISION RISK FORECAST ===");
+            logs.add("⚠️ === REAL COLLISION RISK NEURAL CLASSIFIER ===");
             logs.add("Satellite: " + satelliteId);
-            logs.add("Forecast Period: " + forecastDays + " days");
-            logs.add("Overall Risk Level: " + forecast.getOverallRiskLevel());
-            logs.add("AI Confidence: " + String.format("%.1f%%", forecast.getAiConfidence() * 100));
+            logs.add("Forecast Period: " + days + " days");
             logs.add("");
-            logs.add("📊 DAILY RISK BREAKDOWN:");
 
-            for (DailyRiskAssessment daily : forecast.getDailyRisks()) {
-                String riskIcon = daily.getRiskLevel().equals("ELEVATED") ? "🔴" :
-                        daily.getRiskLevel().equals("MODERATE") ? "🟡" : "🟢";
-                logs.add("   Day " + daily.getDay() + " " + riskIcon + " " + daily.getRiskLevel());
-                logs.add("      Risk Probability: " + String.format("%.4f%%", daily.getRiskProbability() * 100));
-                logs.add("      Threatening Objects: " + daily.getThreateningObjects());
+            double[] orbitalParams = {
+                    (408 + Math.random() * 10) / 1200,
+                    7.8 / 10,
+                    (51.6 + Math.random() * 5) / 180,
+                    (15 + Math.random() * 5) / 30,
+                    Math.random(),
+                    Math.random() * 0.001 * 100,
+                    Math.random()
+            };
 
-                if (daily.getRiskLevel().equals("ELEVATED")) {
-                    logs.add("      ⚠️ ELEVATED RISK - Consider avoidance planning");
-                }
-                logs.add("");
-            }
+            Map<String, Object> riskAssessment = collisionClassifier.assessCollisionRisk(satelliteId, orbitalParams);
+
+            logs.add("🎯 NEURAL CLASSIFIER RESULTS:");
+            logs.add("Risk Level: " + riskAssessment.get("riskLevel"));
+            logs.add("Collision Probability: " + String.format("%.4f%%", (Double) riskAssessment.get("collisionProbability") * 100));
+            logs.add("Threatening Objects: " + riskAssessment.get("threateningObjects"));
 
             logs.add("=================================");
 
         } catch (Exception e) {
-            logs.add("❌ Collision risk forecast failed: " + e.getMessage());
+            logs.add("❌ Collision risk assessment failed: " + e.getMessage());
         }
 
         return null;
     }
+
 
     /**
      * Generate emergency response plan
