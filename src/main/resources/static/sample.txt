@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SatOpsDSL - Satellite Operations Command Center</title>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.95/Build/Cesium/Cesium.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/satellite.js@5.0.0/dist/satellite.min.js"></script>
+
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.95/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #cesiumContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .overlay {
+            position: absolute;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .overlay > * {
+            pointer-events: auto;
+        }
+
+        .header {
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00ffff, #0080ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 30px;
+        }
+
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .status-label {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .status-value {
+            font-size: 16px;
+            color: #00ffff;
+            font-weight: 600;
+        }
+
+        .console-panel {
+            left: 20px;
+            bottom: 20px;
+            width: 500px;
+            height: 300px;
+            background: rgba(10, 20, 30, 0.9);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: height 0.3s ease-in-out;
+        }
+
+        .panel-header {
+            padding: 12px 15px;
+            background: rgba(0, 20, 40, 0.9);
+            border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            color: #00ffff;
+            font-weight: 600;
+        }
+
+        .panel-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .panel-toggle-btn {
+            background: rgba(0, 255, 255, 0.2);
+            border: 1px solid rgba(0, 255, 255, 0.4);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            transition: background 0.3s, transform 0.3s;
+        }
+
+        .panel-toggle-btn:hover {
+            background: rgba(0, 255, 255, 0.4);
+            transform: scale(1.1);
+        }
+
+        .panel-toggle-btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: #00ffff;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .console-panel.minimized {
+            height: 45px;
+        }
+
+        .console-panel.minimized .console-content,
+        .console-panel.minimized .command-input {
+            display: none;
+        }
+
+        .console-panel.minimized .panel-toggle-btn svg {
+            transform: rotate(180deg);
+        }
+
+        .console-content {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #00ffaa;
+            line-height: 1.4;
+        }
+
+        .console-line {
+            margin-bottom: 5px;
+        }
+
+        .prompt {
+            color: #00ffff;
+        }
+
+        .command-input {
+            display: flex;
+            padding: 10px 15px;
+            border-top: 1px solid rgba(0, 255, 255, 0.2);
+            background: rgba(5, 15, 25, 0.9);
+        }
+
+        .command-prefix {
+            color: #00ffff;
+            margin-right: 8px;
+        }
+
+        .command-field {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #00ffaa;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .info-panel {
+            right: 20px;
+            top: 100px;
+            width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .info-card {
+            background: rgba(10, 20, 30, 0.9);
+            border: 1px solid rgba(0, 150, 255, 0.3);
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 150, 255, 0.2);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 12px 15px;
+            background: rgba(0, 30, 60, 0.9);
+            border-bottom: 1px solid rgba(0, 150, 255, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 16px;
+            color: #0080ff;
+            font-weight: 600;
+        }
+
+        .card-content {
+            padding: 15px;
+        }
+
+        .satellite-list {
+            list-style: none;
+        }
+
+        .satellite-item {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .satellite-item.active {
+            background: rgba(0, 100, 200, 0.3);
+            border-left: 3px solid #00ffff;
+        }
+
+        .satellite-item:hover {
+            background: rgba(0, 100, 200, 0.2);
+        }
+
+        .satellite-item:last-child {
+            border-bottom: none;
+        }
+
+        .sat-name {
+            font-weight: 600;
+            color: #00ffff;
+            margin-bottom: 5px;
+        }
+
+        .sat-info {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .telemetry-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .telemetry-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .telemetry-label {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .telemetry-value {
+            font-size: 16px;
+            color: #00ffaa;
+            font-weight: 600;
+        }
+
+        .command-history {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .history-time {
+            color: #0080ff;
+            margin-right: 10px;
+        }
+
+        .history-command {
+            color: #00ffaa;
+        }
+
+        .notification {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 30, 60, 0.9);
+            border: 1px solid rgba(0, 255, 255, 0.5);
+            border-radius: 4px;
+            padding: 10px 20px;
+            color: #00ffff;
+            font-weight: 600;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .notification.show {
+            opacity: 1;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        .status-indicator.offline {
+            background: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+        }
+        /* Smooth transitions for all interactive elements */
+        * {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Better satellite list hover effects */
+        .satellite-item {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .satellite-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: linear-gradient(to bottom, transparent, #00ffff, transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .satellite-item:hover::before {
+            opacity: 1;
+        }
+
+        .satellite-item:hover {
+            background: rgba(0, 100, 200, 0.25);
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 255, 255, 0.2);
+        }
+
+        /* Smooth fade-in animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .info-card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .console-panel {
+            animation: fadeInUp 0.5s ease-out 0.1s backwards;
+        }
+
+        /* Tooltip styles */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 20, 40, 0.95);
+            border: 1px solid rgba(0, 255, 255, 0.5);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #00ffff;
+            pointer-events: none;
+            z-index: 1000;
+            white-space: nowrap;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+        }
+
+        /* Loading spinner */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            border-top-color: #00ffff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Enhanced solar system styling */
+        .planet-label {
+            font-size: 12px !important;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .orbit-path {
+            transition: opacity 0.3s ease;
+        }
+
+        .orbit-path:hover {
+            opacity: 0.8;
+        }
+
+    </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+
+<div class="overlay header">
+    <div class="logo">SatOpsDSL</div>
+    <div class="status-bar">
+        <div class="status-item">
+            <div class="status-label">NETWORK STATUS</div>
+            <div class="status-value">
+                <div class="connection-status">
+                    <div class="status-indicator" id="connection-status"></div>
+                    <span id="network-status-text">ONLINE</span>
+                </div>
+            </div>
+        </div>
+        <div class="status-item">
+            <div class="status-label">ACTIVE SATELLITES</div>
+            <div class="status-value" id="active-satellites">0</div>
+        </div>
+        <div class="status-item">
+            <div class="status-label">SYSTEM TIME</div>
+            <div class="status-value" id="system-time">--:--:-- UTC</div>
+        </div>
+    </div>
+</div>
+
+<div class="overlay console-panel" id="console-panel">
+    <div class="panel-header">
+        <div class="panel-title">MISSION CONTROL CONSOLE</div>
+        <div class="panel-controls">
+            <button id="console-toggle" class="panel-toggle-btn" title="Toggle Console">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            </button>
+        </div>
+    </div>
+    <div class="console-content" id="console-output">
+        <div class="console-line"><span class="prompt">satops></span> System initialized. Connecting to backend...</div>
+    </div>
+    <div class="command-input">
+        <span class="command-prefix">satops></span>
+        <input type="text" class="command-field" id="command-input" placeholder="Enter command..." autocomplete="off">
+    </div>
+</div>
+
+<div class="overlay info-panel">
+    <div class="info-card">
+        <div class="card-header">
+            <div class="card-title">ACTIVE SATELLITES</div>
+        </div>
+        <div class="card-content">
+            <ul class="satellite-list" id="satellite-list">
+                <li style="color: #aaa; padding: 20px; text-align: center;">No satellites deployed</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="info-card">
+        <div class="card-header">
+            <div class="card-title">COMMAND HISTORY</div>
+        </div>
+        <div class="card-content command-history" id="command-history">
+            <div style="color: #aaa; padding: 10px; text-align: center;">No commands yet</div>
+        </div>
+    </div>
+</div>
+
+<div class="notification" id="notification">Command executed successfully</div>
+<script>
+    // ============================================
+    // API CONFIGURATION
+    // ============================================
+    const API_BASE = 'http://localhost:1302/api/frontend';
+    const DSL_ENDPOINT = 'http://localhost:1302/dsl/run';
+
+    // ============================================
+    // CESIUM VIEWER INITIALIZATION
+    // ============================================
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxYWZiNDJkNy0yZWEwLTQ5OWQtYjk0MS0xOThlMTIxMDg1YTgiLCJpZCI6MzMyOTY1LCJpYXQiOjE3NTU1MTcyNzR9.raBDIk08ACyJ5JbAiqca_PFRHh1MyGLi3Bqfej5sL9Q';
+
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+        animation: true,
+        baseLayerPicker: false,
+        fullscreenButton: false,
+        geocoder: false,
+        homeButton: true,
+        infoBox: true,
+        imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+            url: 'https://a.tile.openstreetmap.org/'
+        }),
+        sceneModePicker: false,
+        selectionIndicator: true,
+        timeline: true,
+        navigationHelpButton: false,
+        scene3DOnly: true,
+        terrainProvider: Cesium.createWorldTerrain()
+    });
+
+    viewer.scene.globe.enableLighting = true;
+    viewer.scene.globe.depthTestAgainstTerrain = false;
+    viewer.scene.backgroundColor = Cesium.Color.BLACK;
+    viewer.scene.globe.showGroundAtmosphere = true;
+    viewer.clock.shouldAnimate = true;
+    viewer.clock.multiplier = 1;
+
+    viewer.camera.setView({
+        destination: Cesium.Cartesian3.fromDegrees(0, 0, 25000000),
+        orientation: { heading: 0, pitch: -1.57, roll: 0 }
+    });
+    // ============================================
+    // ENHANCED CAMERA CONTROLS
+    // ============================================
+    let isTracking = false;
+
+    // Smooth camera flyTo function
+    function flyToSatellite(satId, duration = 2) {
+        const entity = viewer.entities.getById(satId);
+        if (entity) {
+            viewer.flyTo(entity, {
+                duration: duration,
+                offset: new Cesium.HeadingPitchRange(
+                    0,
+                    Cesium.Math.toRadians(-45),
+                    5000000 // 5000 km distance
+                )
+            }).then(() => {
+                isTracking = true;
+                showNotification(`Tracking ${satId.toUpperCase()}`);
+            });
+        }
+    }
+
+    // ============================================
+    // ENHANCED SOLAR SYSTEM VISUALIZATION
+    // ============================================
+
+    function createEnhancedSolarSystem() {
+        const currentDate = Cesium.JulianDate.now();
+
+        // More accurate planetary data (semi-major axis in meters, orbital periods in Earth days)
+        const planets = [
+            {
+                name: 'Mercury',
+                color: Cesium.Color.fromCssColorString('#8C7853'),
+                radius: 2439700,
+                distance: 57.9e9,
+                period: 88,
+                size: 8,
+                inclination: 7.0,
+                description: 'Closest planet to the Sun'
+            },
+            {
+                name: 'Venus',
+                color: Cesium.Color.fromCssColorString('#FFC649'),
+                radius: 6051800,
+                distance: 108.2e9,
+                period: 225,
+                size: 12,
+                inclination: 3.4,
+                description: 'Earth\'s sister planet'
+            },
+            {
+                name: 'Earth',
+                color: Cesium.Color.fromCssColorString('#6B93D6'),
+                radius: 6371000,
+                distance: 149.6e9,
+                period: 365.25,
+                size: 12,
+                inclination: 0.0,
+                description: 'Our home planet'
+            },
+            {
+                name: 'Mars',
+                color: Cesium.Color.fromCssColorString('#CD5C5C'),
+                radius: 3389500,
+                distance: 227.9e9,
+                period: 687,
+                size: 10,
+                inclination: 1.8,
+                description: 'The red planet'
+            },
+            {
+                name: 'Jupiter',
+                color: Cesium.Color.fromCssColorString('#D8CA9D'),
+                radius: 69911000,
+                distance: 778.5e9,
+                period: 4333,
+                size: 20,
+                inclination: 1.3,
+                description: 'Largest planet in solar system'
+            },
+            {
+                name: 'Saturn',
+                color: Cesium.Color.fromCssColorString('#F4A460'),
+                radius: 58232000,
+                distance: 1434e9,
+                period: 10759,
+                size: 18,
+                inclination: 2.5,
+                description: 'Famous for its rings'
+            },
+            {
+                name: 'Uranus',
+                color: Cesium.Color.fromCssColorString('#4FD0E7'),
+                radius: 25362000,
+                distance: 2871e9,
+                period: 30687,
+                size: 15,
+                inclination: 0.8,
+                description: 'Ice giant tilted on its side'
+            },
+            {
+                name: 'Neptune',
+                color: Cesium.Color.fromCssColorString('#4B70DD'),
+                radius: 24622000,
+                distance: 4495e9,
+                period: 60190,
+                size: 15,
+                inclination: 1.8,
+                description: 'The windiest planet'
+            }
+        ];
+
+        // Add the Sun at center
+        viewer.entities.add({
+            name: 'Sun',
+            position: Cesium.Cartesian3.ZERO,
+            point: {
+                pixelSize: 25,
+                color: Cesium.Color.YELLOW,
+                outlineColor: Cesium.Color.ORANGE,
+                outlineWidth: 2,
+                scaleByDistance: new Cesium.NearFarScalar(1e9, 1.0, 1e12, 0.3)
+            },
+            label: {
+                text: 'SUN',
+                font: '16pt monospace',
+                fillColor: Cesium.Color.YELLOW,
+                outlineColor: Cesium.Color.BLACK,
+                outlineWidth: 3,
+                style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                pixelOffset: new Cesium.Cartesian2(0, -25),
+                scale: 0.8
+            }
+        });
+
+        planets.forEach(planet => {
+            // Enhanced orbital position with inclination
+            const positionProperty = new Cesium.CallbackProperty(function(time, result) {
+                const daysSinceStart = Cesium.JulianDate.daysDifference(time, currentDate);
+                const angle = (daysSinceStart / planet.period) * 2 * Math.PI;
+
+                // Add orbital inclination
+                const inclination = Cesium.Math.toRadians(planet.inclination);
+
+                const x = planet.distance * Math.cos(angle);
+                const y = planet.distance * Math.sin(angle) * Math.cos(inclination);
+                const z = planet.distance * Math.sin(angle) * Math.sin(inclination);
+
+                return new Cesium.Cartesian3(x, y, z);
+            }, false);
+
+            // Create planet entity with enhanced visuals
+            const planetEntity = viewer.entities.add({
+                name: planet.name,
+                position: positionProperty,
+                point: {
+                    pixelSize: planet.size,
+                    color: planet.color,
+                    outlineColor: Cesium.Color.WHITE.withAlpha(0.7),
+                    outlineWidth: 1,
+                    scaleByDistance: new Cesium.NearFarScalar(1e9, 1.5, 1e12, 0.3),
+                    heightReference: Cesium.HeightReference.NONE
+                },
+                label: {
+                    text: planet.name.toUpperCase(),
+                    font: '12pt monospace',
+                    fillColor: Cesium.Color.WHITE,
+                    outlineColor: Cesium.Color.BLACK,
+                    outlineWidth: 2,
+                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                    pixelOffset: new Cesium.Cartesian2(0, -planet.size - 5),
+                    scaleByDistance: new Cesium.NearFarScalar(1e9, 1.0, 1e12, 0.0),
+                    translucencyByDistance: new Cesium.NearFarScalar(1e9, 1.0, 1e12, 0.0)
+                },
+                description: `
+                    <div style="padding: 15px; font-family: monospace; background: rgba(0,0,0,0.8); border: 1px solid #00ffff;">
+                        <h2 style="color: #00ffff; margin: 0 0 10px 0;">${planet.name}</h2>
+                        <p style="margin: 5px 0; color: #aaa;">${planet.description}</p>
+                        <hr style="border-color: #00ffff; margin: 10px 0;">
+                        <p style="margin: 5px 0;"><b>Distance from Sun:</b> <span style="color: #00ffaa;">${(planet.distance / 1e9).toFixed(1)} million km</span></p>
+                        <p style="margin: 5px 0;"><b>Orbital Period:</b> <span style="color: #00ffaa;">${planet.period} days</span></p>
+                        <p style="margin: 5px 0;"><b>Radius:</b> <span style="color: #00ffaa;">${(planet.radius / 1000).toFixed(0)} km</span></p>
+                        <p style="margin: 5px 0;"><b>Orbital Inclination:</b> <span style="color: #00ffaa;">${planet.inclination}°</span></p>
+                    </div>
+                `
+            });
+
+            // Enhanced orbital path with better visibility
+            const orbitPoints = [];
+            const segments = 200; // More segments for smoother orbit
+
+            for (let i = 0; i <= segments; i++) {
+                const angle = (i / segments) * 2 * Math.PI;
+                const inclination = Cesium.Math.toRadians(planet.inclination);
+
+                const x = planet.distance * Math.cos(angle);
+                const y = planet.distance * Math.sin(angle) * Math.cos(inclination);
+                const z = planet.distance * Math.sin(angle) * Math.sin(inclination);
+
+                orbitPoints.push(new Cesium.Cartesian3(x, y, z));
+            }
+
+            viewer.entities.add({
+                name: planet.name + ' Orbit',
+                polyline: {
+                    positions: orbitPoints,
+                    width: 1.5,
+                    material: new Cesium.PolylineGlowMaterialProperty({
+                        glowPower: 0.2,
+                        color: planet.color.withAlpha(0.4)
+                    }),
+                    arcType: Cesium.ArcType.NONE,
+                    clampToGround: false
+                }
+            });
+
+            // Add orbital period information
+            viewer.entities.add({
+                name: planet.name + ' Period Marker',
+                position: new Cesium.CallbackProperty(function(time) {
+                    const daysSinceStart = Cesium.JulianDate.daysDifference(time, currentDate);
+                    const angle = (daysSinceStart / planet.period) * 2 * Math.PI;
+                    const x = planet.distance * Math.cos(angle);
+                    const y = planet.distance * Math.sin(angle);
+                    return new Cesium.Cartesian3(x, y, 0);
+                }, false),
+                label: {
+                    text: `${planet.period}d`,
+                    font: '10pt monospace',
+                    fillColor: planet.color,
+                    outlineColor: Cesium.Color.BLACK,
+                    outlineWidth: 1,
+                    pixelOffset: new Cesium.Cartesian2(15, 0),
+                    scale: 0.7
+                }
+            });
+        });
+
+        // Add asteroid belt between Mars and Jupiter
+        createAsteroidBelt();
+    }
+
+    function createAsteroidBelt() {
+        const beltInnerRadius = 329e9; // 329 million km
+        const beltOuterRadius = 478e9; // 478 million km
+
+        // Create a representative asteroid belt visualization
+        for (let i = 0; i < 50; i++) {
+            const distance = beltInnerRadius + Math.random() * (beltOuterRadius - beltInnerRadius);
+            const angle = Math.random() * Math.PI * 2;
+
+            const positionProperty = new Cesium.CallbackProperty(function(time, result) {
+                const daysSinceStart = Cesium.JulianDate.daysDifference(time, Cesium.JulianDate.now());
+                const orbitSpeed = 0.1 + Math.random() * 0.2; // Varying speeds
+
+                const currentAngle = angle + (daysSinceStart / 1680) * orbitSpeed * 2 * Math.PI;
+                const x = distance * Math.cos(currentAngle);
+                const y = distance * Math.sin(currentAngle);
+
+                return new Cesium.Cartesian3(x, y, 0);
+            }, false);
+
+            viewer.entities.add({
+                position: positionProperty,
+                point: {
+                    pixelSize: 1 + Math.random() * 2,
+                    color: Cesium.Color.GRAY.withAlpha(0.7),
+                    outlineColor: Cesium.Color.DARKGRAY,
+                    outlineWidth: 0.5
+                }
+            });
+        }
+    }
+
+    // Enhanced solar system view controls
+    function flyToSolarSystemView() {
+        viewer.camera.flyTo({
+            destination: Cesium.Cartesian3.fromElements(0, -8e11, 3e11), // Better viewing angle
+            orientation: {
+                heading: 0,
+                pitch: -0.8, // Better perspective
+                roll: 0
+            },
+            duration: 4,
+            complete: function() {
+                showNotification('Solar System View - Press H for Earth view');
+            }
+        });
+    }
+
+    // Add solar system scale information
+    function showSolarSystemScale() {
+        addConsoleOutput('Solar System Scale:');
+        addConsoleOutput('• 1 AU = 149.6 million km');
+        addConsoleOutput('• Inner Planets: Mercury to Mars');
+        addConsoleOutput('• Outer Planets: Jupiter to Neptune');
+        addConsoleOutput('• Distances not to scale for visibility');
+    }
+
+    // Enable Sun and Moon (Cesium built-in)
+    viewer.scene.sun = new Cesium.Sun();
+    viewer.scene.moon = new Cesium.Moon();
+
+    // Add realistic starfield background
+    viewer.scene.skyBox = new Cesium.SkyBox({
+        sources: {
+            positiveX: 'https://cesium.com/downloads/cesiumjs/releases/1.95/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_px.jpg',
+            negativeX: 'https://cesium.com/downloads/cesiumjs/releases/1.95/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_mx.jpg',
+            positiveY: 'https://cesium.com/downloads/cesiumjs/releases/1.95/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_py.jpg',
+            negativeY: 'https://cesium.com/downloads/cesiumjs/releases/1.95/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_my.jpg',
+            positiveZ: 'https://cesium.com/downloads/cesiumjs/releases/1.95/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_pz.jpg',
+            negativeZ: 'https://cesium.com/downloads/cesiumjs/releases/1.95/Build/Cesium/Assets/Textures/SkyBox/tycho2t3_80_mz.jpg'
+        }
+    });
+
+    // Initialize enhanced solar system
+    createEnhancedSolarSystem();
+
+    // Add keyboard shortcut to zoom out to solar system view
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 's' || e.key === 'S') {
+            flyToSolarSystemView();
+        }
+    });
+
+    // Stop tracking and return to free roam
+    function stopTracking() {
+        viewer.trackedEntity = undefined;
+        isTracking = false;
+        showNotification('Free roam mode');
+    }
+
+    // ============================================
+    // KEYBOARD SHORTCUTS
+    // ============================================
+    document.addEventListener('keydown', (e) => {
+        switch(e.key) {
+            case 'Escape':
+                stopTracking();
+                break;
+            case ' ':
+                viewer.clock.shouldAnimate = !viewer.clock.shouldAnimate;
+                showNotification(viewer.clock.shouldAnimate ? 'Time resumed' : 'Time paused');
+                e.preventDefault();
+                break;
+            case '+':
+            case '=':
+                viewer.clock.multiplier = Math.min(viewer.clock.multiplier * 2, 1000);
+                showNotification(`Speed: ${viewer.clock.multiplier}x`);
+                break;
+            case '-':
+            case '_':
+                viewer.clock.multiplier = Math.max(viewer.clock.multiplier / 2, 0.1);
+                showNotification(`Speed: ${viewer.clock.multiplier}x`);
+                break;
+            case 'h':
+            case 'H':
+                viewer.camera.flyHome(2);
+                stopTracking();
+                break;
+        }
+    });
+
+    // ============================================
+    // ENHANCED SATELLITE SELECTION
+    // ============================================
+    function selectSatellite(satId) {
+        const sat = satellites.find(s => (s.satelliteId || s.id) === satId);
+        if (sat) {
+            flyToSatellite(satId);
+
+            // Update telemetry display
+            updateTelemetryDisplay(sat);
+        }
+    }
+
+    // Show real-time telemetry for selected satellite
+    function updateTelemetryDisplay(satellite) {
+        const satId = satellite.satelliteId || satellite.id;
+        const entity = viewer.entities.getById(satId);
+
+        if (entity) {
+            // Update telemetry every frame
+            const updateInterval = setInterval(() => {
+                if (!viewer.trackedEntity || viewer.trackedEntity.id !== satId) {
+                    clearInterval(updateInterval);
+                    return;
+                }
+
+                const position = entity.position.getValue(viewer.clock.currentTime);
+                if (position) {
+                    const cartographic = Cesium.Cartographic.fromCartesian(position);
+                    const lat = Cesium.Math.toDegrees(cartographic.latitude).toFixed(4);
+                    const lon = Cesium.Math.toDegrees(cartographic.longitude).toFixed(4);
+                    const alt = (cartographic.height / 1000).toFixed(2);
+
+                    // You can update a telemetry panel here
+                    console.log(`${satId} - Lat: ${lat}, Lon: ${lon}, Alt: ${alt} km`);
+                }
+            }, 1000);
+        }
+    }
+
+
+    // ============================================
+    // DOM ELEMENTS
+    // ============================================
+    const commandInput = document.getElementById('command-input');
+    const consoleOutput = document.getElementById('console-output');
+    const satelliteList = document.getElementById('satellite-list');
+    const commandHistory = document.getElementById('command-history');
+    const systemTime = document.getElementById('system-time');
+    const notification = document.getElementById('notification');
+    const connectionStatus = document.getElementById('connection-status');
+    const networkStatusText = document.getElementById('network-status-text');
+    const activeSatellitesCount = document.getElementById('active-satellites');
+
+    // ============================================
+    // STATE MANAGEMENT
+    // ============================================
+    let satellites = [];
+    let selectedSatellite = null;
+
+    // ============================================
+    // ANIMATED ORBIT VISUALIZATION
+    // ============================================
+    function createSatelliteEntityWithOrbit(satellite) {
+        const satId = satellite.satelliteId || satellite.id;
+        const existing = viewer.entities.getById(satId);
+        if (existing) {
+            viewer.entities.remove(existing);
+        }
+
+        if (!satellite.tleLine1 || !satellite.tleLine2 ||
+            satellite.tleLine1.length < 50 || satellite.tleLine2.length < 50) {
+            console.warn('Invalid TLE for ' + satId);
+            return createSimpleSatellite(satellite);
+        }
+
+        try {
+            console.log('🛰️ Creating animated orbit for ' + satId);
+
+            const satrec = window.satellite.twoline2satrec(
+                satellite.tleLine1,
+                satellite.tleLine2
+            );
+
+            if (!satrec || satrec.error) {
+                console.error('TLE parsing error for ' + satId);
+                return createSimpleSatellite(satellite);
+            }
+
+            // Create callback for real-time position
+            const positionProperty = new Cesium.CallbackProperty(function(time, result) {
+                const jsDate = Cesium.JulianDate.toDate(time);
+                const positionAndVelocity = window.satellite.propagate(satrec, jsDate);
+
+                if (positionAndVelocity.position && !positionAndVelocity.position.error) {
+                    const positionEci = positionAndVelocity.position;
+                    const gmst = window.satellite.gstime(jsDate);
+                    const positionGd = window.satellite.eciToGeodetic(positionEci, gmst);
+
+                    const longitude = positionGd.longitude * (180 / Math.PI);
+                    const latitude = positionGd.latitude * (180 / Math.PI);
+                    const height = positionGd.height * 1000;
+
+                    return Cesium.Cartesian3.fromDegrees(longitude, latitude, height, Cesium.Ellipsoid.WGS84, result);
+                }
+                return Cesium.Cartesian3.ZERO;
+            }, false);
+
+            // ✅ Generate orbital path positions (FULL ORBIT)
+            const orbitPositions = [];
+            const startDate = new Date();
+            const orbitalPeriod = 5400; // 90 minutes in seconds
+
+            for (let i = 0; i <= 100; i++) {
+                const timeOffset = (orbitalPeriod / 100) * i;
+                const date = new Date(startDate.getTime() + timeOffset * 1000);
+
+                const positionAndVelocity = window.satellite.propagate(satrec, date);
+
+                if (positionAndVelocity.position && !positionAndVelocity.position.error) {
+                    const positionEci = positionAndVelocity.position;
+                    const gmst = window.satellite.gstime(date);
+                    const positionGd = window.satellite.eciToGeodetic(positionEci, gmst);
+
+                    const longitude = positionGd.longitude * (180 / Math.PI);
+                    const latitude = positionGd.latitude * (180 / Math.PI);
+                    const height = positionGd.height * 1000;
+
+                    orbitPositions.push(Cesium.Cartesian3.fromDegrees(longitude, latitude, height));
+                }
+            }
+
+            // Create the orbital path polyline
+            // Create the orbital path polyline
+            viewer.entities.add({
+                id: satId + '_orbit',
+                polyline: {
+                    positions: orbitPositions,
+                    width: 3.5,  // ✅ Slightly thicker for better visibility
+                    material: new Cesium.PolylineGlowMaterialProperty({
+                        glowPower: 0.15,  // ✅ Less glow = less blur
+                        taperPower: 0.3,   // ✅ Reduced taper for consistent brightness
+                        color: Cesium.Color.YELLOW.withAlpha(0.95)  // ✅ Bright yellow, almost fully opaque
+                    }),
+                    clampToGround: false,
+                    arcType: Cesium.ArcType.NONE  // ✅ Prevents distortion
+                }
+            });
+
+
+            // Create the satellite entity - TINY DOT VERSION
+            // Create the satellite entity with zoom-based labels
+            const entity = viewer.entities.add({
+                id: satId,
+                name: satellite.name,
+                position: positionProperty,
+
+                // Satellite dot
+                point: {
+                    pixelSize: 6,
+                    color: Cesium.Color.CYAN,
+                    outlineColor: Cesium.Color.WHITE,
+                    outlineWidth: 1,
+                    heightReference: Cesium.HeightReference.NONE,
+                    scaleByDistance: new Cesium.NearFarScalar(1.5e6, 1.5, 8.0e6, 0.5)
+                },
+
+                // Label only appears when zoomed in close
+                label: {
+                    text: satId.toUpperCase(),
+                    font: '12pt monospace',
+                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                    outlineWidth: 2,
+                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                    pixelOffset: new Cesium.Cartesian2(0, -12),
+                    fillColor: Cesium.Color.CYAN,
+                    outlineColor: Cesium.Color.BLACK,
+                    showBackground: false,
+                    scaleByDistance: new Cesium.NearFarScalar(1.5e6, 1.0, 8.0e6, 0.0),
+                    translucencyByDistance: new Cesium.NearFarScalar(1.5e6, 1.0, 8.0e6, 0.0)
+                },
+
+                // Info popup when clicked
+                description: `
+        <div style="font-family: monospace; color: #00ffff; padding: 10px;">
+            <h3 style="margin: 0 0 10px 0;">${satellite.name}</h3>
+            <p style="margin: 5px 0;"><b>ID:</b> ${satId}</p>
+            <p style="margin: 5px 0;"><b>NORAD:</b> ${satellite.noradId}</p>
+            <p style="margin: 5px 0;"><b>Status:</b> ${satellite.status}</p>
+            <p style="margin: 5px 0;"><b>Altitude:</b> ${satellite.altitude ? satellite.altitude.toFixed(2) + ' km' : 'N/A'}</p>
+        </div>
+    `
+            });
+
+
+
+            console.log('Animated orbit with path created for ' + satId);
+            return entity;
+
+        } catch (error) {
+            console.error(' Error creating orbit for ' + satId + ':', error);
+            return createSimpleSatellite(satellite);
+        }
+    }
+
+    function createSimpleSatellite(satellite) {
+        const satId = satellite.satelliteId || satellite.id;
+        return viewer.entities.add({
+            id: satId,
+            name: satellite.name,
+            position: Cesium.Cartesian3.fromDegrees(
+                satellite.longitude || 0,
+                satellite.latitude || 0,
+                (satellite.altitude || 400) * 1000
+            ),
+            point: {
+                pixelSize: 10,
+                color: Cesium.Color.YELLOW,
+                outlineColor: Cesium.Color.WHITE,
+                outlineWidth: 2
+            },
+            label: {
+                text: satId.toUpperCase(),
+                font: '14pt monospace',
+                style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                outlineWidth: 2,
+                verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                pixelOffset: new Cesium.Cartesian2(0, -15),
+                fillColor: Cesium.Color.YELLOW,
+                outlineColor: Cesium.Color.BLACK
+            }
+        });
+    }
+
+    // ============================================
+    // API FUNCTIONS
+    // ============================================
+    async function checkBackendHealth() {
+        try {
+            const response = await fetch(`${API_BASE}/health`);
+            const data = await response.json();
+            if (data.status === 'UP') {
+                connectionStatus.classList.remove('offline');
+                networkStatusText.textContent = 'ONLINE';
+                addConsoleOutput('✅ Backend connected');
+                return true;
+            }
+        } catch (error) {
+            connectionStatus.classList.add('offline');
+            networkStatusText.textContent = 'OFFLINE';
+            addConsoleOutput('❌ Backend offline');
+            return false;
+        }
+    }
+
+    async function loadSatellitesFromDB() {
+        try {
+            const response = await fetch(`${API_BASE}/satellites`);
+            const dbSatellites = await response.json();
+
+            satellites = dbSatellites;
+            activeSatellitesCount.textContent = satellites.length;
+
+            if (satellites.length === 0) {
+                satelliteList.innerHTML = '<li style="color: #aaa; padding: 20px; text-align: center;">No satellites deployed</li>';
+            } else {
+                renderSatelliteList();
+                satellites.forEach(sat => {
+                    createSatelliteEntityWithOrbit(sat);
+                });
+            }
+        } catch (error) {
+            addConsoleOutput('❌ Error loading satellites: ' + error.message);
+        }
+    }
+
+    async function loadCommandHistory() {
+        try {
+            const response = await fetch(`${API_BASE}/command-history`);
+            const history = await response.json();
+
+            if (history.length === 0) {
+                commandHistory.innerHTML = '<div style="color: #aaa; padding: 10px; text-align: center;">No commands yet</div>';
+            } else {
+                commandHistory.innerHTML = '';
+                history.slice(0, 10).forEach(cmd => {
+                    const item = document.createElement('div');
+                    item.className = 'history-item';
+                    const time = new Date(cmd.executedAt).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    item.innerHTML = `<span class="history-time">${time}</span><span class="history-command">${cmd.command}</span>`;
+                    commandHistory.appendChild(item);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading history:', error);
+        }
+    }
+
+    function renderSatelliteList() {
+        satelliteList.innerHTML = '';
+        satellites.forEach((sat, index) => {
+            const satId = sat.satelliteId || sat.id;
+            const listItem = document.createElement('li');
+            listItem.className = 'satellite-item';
+            listItem.style.animationDelay = `${index * 0.1}s`;
+            listItem.innerHTML = `
+            <div class="sat-name">${sat.name}</div>
+            <div class="sat-info">ID: ${satId} | NORAD: ${sat.noradId}</div>
+        `;
+
+            // Better click interaction
+            listItem.addEventListener('click', () => {
+                document.querySelectorAll('.satellite-item').forEach(i => i.classList.remove('active'));
+                listItem.classList.add('active');
+                selectSatellite(satId);
+            });
+
+            // Add hover tooltip
+            listItem.addEventListener('mouseenter', (e) => {
+                const tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.textContent = 'Click to track satellite';
+                tooltip.style.left = e.pageX + 15 + 'px';
+                tooltip.style.top = e.pageY - 10 + 'px';
+                document.body.appendChild(tooltip);
+
+                listItem.addEventListener('mouseleave', () => {
+                    document.body.removeChild(tooltip);
+                }, { once: true });
+            });
+
+            satelliteList.appendChild(listItem);
+        });
+    }
+
+
+    function selectSatellite(satId) {
+        const entity = viewer.entities.getById(satId);
+        if (entity) {
+            viewer.trackedEntity = entity;
+        }
+    }
+
+    commandInput.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') {
+            const text = commandInput.value.trim();
+            if (text) {
+                await executeCommand(text);
+                commandInput.value = '';
+            }
+        }
+    });
+
+    async function executeCommand(dslCommand) {
+        addConsoleOutput(`<span class="prompt">satops></span> ${dslCommand}`);
+
+        try {
+            const response = await fetch(DSL_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: dslCommand
+            });
+
+            const result = await response.text();
+            const lines = result.split('\n');
+            lines.forEach(line => {
+                if (line.trim()) {
+                    addConsoleOutput(line);
+                }
+            });
+
+            await loadSatellitesFromDB();
+            await loadCommandHistory();
+
+        } catch (error) {
+            addConsoleOutput('❌ Error: ' + error.message);
+        }
+
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }
+
+    function addConsoleOutput(text) {
+        const line = document.createElement('div');
+        line.className = 'console-line';
+        line.innerHTML = text;
+        consoleOutput.appendChild(line);
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }
+
+    function showNotification(msg) {
+        notification.textContent = msg;
+        notification.classList.add('show');
+        setTimeout(() => notification.classList.remove('show'), 3000);
+    }
+
+    function updateSystemTime() {
+        const now = new Date();
+        systemTime.textContent = now.toUTCString().split(' ')[4] + ' UTC';
+    }
+    setInterval(updateSystemTime, 1000);
+    updateSystemTime();
+
+    document.getElementById('console-toggle').addEventListener('click', () => {
+        document.getElementById('console-panel').classList.toggle('minimized');
+    });
+
+    (async function init() {
+        addConsoleOutput('🚀 SatOpsDSL v1.0');
+        addConsoleOutput('📡 Connecting to backend...');
+
+        const connected = await checkBackendHealth();
+
+        if (connected) {
+            await loadSatellitesFromDB();
+            await loadCommandHistory();
+            addConsoleOutput('✅ System ready. Use your DSL commands!');
+            addConsoleOutput('💡 Example: deploy iss with id 25544;');
+
+            // Show solar system info after initialization
+            setTimeout(showSolarSystemScale, 5000);
+        } else {
+            addConsoleOutput('⚠️ Backend offline');
+        }
+    })();
+
+    setInterval(loadCommandHistory, 10000);
+</script>
+
+</body></html>

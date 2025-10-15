@@ -5,6 +5,7 @@ import com.dsl.simulator.Predictor.PassPredictor;
 import com.dsl.simulator.Product.GroundStation;
 import com.dsl.simulator.Product.Satellite;
 import lombok.RequiredArgsConstructor;
+import org.orekit.bodies.GeodeticPoint;
 import org.orekit.forces.radiation.IsotropicRadiationSingleCoefficient;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.hipparchus.optim.nonlinear.vector.leastsquares.LevenbergMarquardtOptimizer;
@@ -62,9 +63,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.Instant;
 import java.util.*;
+import org.orekit.bodies.OneAxisEllipsoid;
+import org.orekit.frames.FramesFactory;
+import org.orekit.utils.Constants;
+import org.orekit.utils.IERSConventions;
 
 @Service
-@RequiredArgsConstructor
 public class MissionControlService {
 
     private final CelestrakService celestrakService;
@@ -72,13 +76,31 @@ public class MissionControlService {
     private final Map<String, Satellite> activeSatellites = new HashMap<>();
     private final Map<String, GroundStation> activeGroundStations = new HashMap<>();
     private final List<QueuedMessage> messageQueue = new ArrayList<>();
-
     // Professional satellite subsystem status tracking
     private final Map<String, SatelliteSubsystems> subsystemStatus = new HashMap<>();
 
     // REST Template for API calls
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private final OneAxisEllipsoid earthShape;
+
+
+    public MissionControlService(CelestrakService celestrakService, RealTimeDataService realTimeDataService) {
+        this.celestrakService = celestrakService;
+        this.realTimeDataService = realTimeDataService;
+
+        try {
+            // Initialize Earth shape for TLE calculations
+            this.earthShape = new OneAxisEllipsoid(
+                    Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
+                    Constants.WGS84_EARTH_FLATTENING,
+                    FramesFactory.getITRF(IERSConventions.IERS_2010, true)
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize Earth shape", e);
+        }
+    }
 
     private static class QueuedMessage {
         final String satId, gsId, text;
@@ -127,27 +149,54 @@ public class MissionControlService {
     }
 
     // --- CORE METHODS (EXISTING) ---
-    public Satellite deploySatellite(String satId, int noradId) {
-        Optional<TLE> tleOpt = celestrakService.fetchTleById(noradId);
-        if (tleOpt.isEmpty()) {
-            System.out.println("Celestrak fetch failed. Falling back to local TLE file for " + satId);
-            tleOpt = loadTleFromClasspath(satId);
+    private String[] fetchTLEFromCelestrak(int noradId) {
+        try {
+            return celestrakService.fetchTLEByNorad(noradId);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch TLE from CELESTRAK for NORAD ID: " + noradId, e);
         }
-
-        Satellite sat;
-        if (tleOpt.isPresent()) {
-            TLE tle = tleOpt.get();
-            Propagator prop = TLEPropagator.selectExtrapolator(tle);
-            AbsoluteDate epoch = VisibilityUtil.nowUtc();
-            sat = new Satellite(satId, prop, epoch);
-        } else {
-            sat = new Satellite(satId, 0, 0);
-        }
-
-        activeSatellites.put(satId, sat);
-        subsystemStatus.put(satId, new SatelliteSubsystems());
-        return sat;
     }
+
+
+    public Satellite deploySatellite(String satelliteId, int noradId) {
+        // Fetch TLE from CELESTRAK
+        String[] tleLines = fetchTLEFromCelestrak(noradId);
+
+        if (tleLines == null || tleLines.length < 2) {
+            throw new RuntimeException("Failed to fetch TLE for NORAD ID: " + noradId);
+        }
+
+        String tleLine1 = tleLines[0];
+        String tleLine2 = tleLines[1];
+
+        // Parse TLE and create propagator
+        TLE tle = new TLE(tleLine1, tleLine2);
+        TLEPropagator propagator = TLEPropagator.selectExtrapolator(tle);
+
+        // Create satellite with TLE data
+        Satellite satellite = new Satellite(satelliteId, propagator, tle.getDate());
+
+        // ✅ SET THE TLE DATA SO FRONTEND CAN ACCESS IT
+        satellite.setId(satelliteId);
+        satellite.setNoradId(noradId);
+        satellite.setTleLine1(tleLine1);
+        satellite.setTleLine2(tleLine2);
+
+        // Calculate current position
+        SpacecraftState state = propagator.propagate(tle.getDate());
+        GeodeticPoint gp = earthShape.transform(
+                state.getPVCoordinates().getPosition(),
+                state.getFrame(),
+                state.getDate()
+        );
+
+        satellite.setLatitude(Math.toDegrees(gp.getLatitude()));
+        satellite.setLongitude(Math.toDegrees(gp.getLongitude()));
+        satellite.setAltitude(gp.getAltitude() / 1000.0); // meters to km
+        activeSatellites.put(satelliteId, satellite);
+        return satellite;
+    }
+
 
     public GroundStation deployGroundStation(String gsId, double lat, double lon) {
         GroundStation gs = new GroundStation(gsId, lat, lon);

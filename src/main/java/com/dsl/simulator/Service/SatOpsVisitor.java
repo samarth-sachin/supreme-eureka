@@ -4,6 +4,7 @@ import com.dsl.simulator.Product.GroundStation;
 import com.dsl.simulator.Product.Satellite;
 import com.dsl.simulator.RealAI.*;
 import com.dsl.simulator.RealAI.SatelliteHealthPredictor;
+import com.dsl.simulator.Repository.SatelliteRepository;
 import com.dsl.simulator.SatOpsBaseVisitor;
 import com.dsl.simulator.SatOpsParser;
 import com.dsl.simulator.Service.MissionControlService.SatelliteSubsystems;
@@ -30,7 +31,6 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
     private final TelemetryStreamer telemetryStreamer;
     private final List<String> logs = new ArrayList<>();
     private SatellitePropagation satellitePropagation = new SatellitePropagation();
-    @Autowired
     private OptaPlannerMissionService optaPlannerService;
     private final ConstellationOptimizer constellationOptimizer;
     private final RealAIService realAIService; // NEW
@@ -38,17 +38,29 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
     private final AnomalyDetectionNetwork anomalyDetector; // NEW
     private final PatternRecognitionLSTM patternAnalyzer; // NEW
     private final CollisionRiskClassifier collisionClassifier;
+    private final SatelliteRepository satelliteRepository;
 
 
-    public SatOpsVisitor(MissionControlService missionControlService, TelemetryStreamer telemetryStreamer, ConstellationOptimizer constellationOptimizer, RealAIService realAIService, SatelliteHealthPredictor healthPredictor, AnomalyDetectionNetwork anomalyDetector, PatternRecognitionLSTM patternAnalyzer, CollisionRiskClassifier collisionClassifier) {
+    public SatOpsVisitor(
+            MissionControlService missionControlService,
+            TelemetryStreamer telemetryStreamer,  // CAN BE NULL - NO @Autowired needed here
+            ConstellationOptimizer constellationOptimizer,
+            RealAIService realAIService,
+            SatelliteHealthPredictor healthPredictor,
+            AnomalyDetectionNetwork anomalyDetector,
+            PatternRecognitionLSTM patternAnalyzer,
+            CollisionRiskClassifier collisionClassifier,
+            SatelliteRepository satelliteRepository
+    ) {
         this.missionControlService = missionControlService;
-        this.telemetryStreamer = telemetryStreamer;
+        this.telemetryStreamer = telemetryStreamer;  // Will be null when Kafka is disabled
         this.constellationOptimizer = constellationOptimizer;
         this.realAIService = realAIService;
         this.healthPredictor = healthPredictor;
         this.anomalyDetector = anomalyDetector;
         this.patternAnalyzer = patternAnalyzer;
         this.collisionClassifier = collisionClassifier;
+        this.satelliteRepository = satelliteRepository;
     }
 
     public List<String> getLogs() {
@@ -63,30 +75,44 @@ public class SatOpsVisitor extends SatOpsBaseVisitor<Void> {
 
     // --- EXISTING BASIC COMMANDS (UNCHANGED) ---
 
+
     @Override
     public Void visitDeployStatement(SatOpsParser.DeployStatementContext ctx) {
-        String satId = ctx.ID().getText();
-        int noradId = Integer.parseInt(ctx.NUMBER().getText());
-        Satellite sat = missionControlService.deploySatellite(satId, noradId);
-        if (sat.isPhysicsBased()) {
-            logs.add("✓ DEPLOYED (physics): " + sat.getSatelliteName());
-        } else {
-            logs.add("⚠ DEPLOYED (dummy): " + sat.getSatelliteName());
-            logs.add("  Hint: TLE fetch failed. Check NORAD ID or local file.");
+        String satelliteId = ctx.ID().getText();              // Gets "iss"
+        int noradId = Integer.parseInt(ctx.NUMBER().getText()); // Gets "25544" as NUMBER token
+
+        try {
+            // 1. Deploy via MissionControlService (fetches TLE from CELESTRAK)
+            Satellite deployedSat = missionControlService.deploySatellite(satelliteId, noradId);
+
+            // 2. Save to MySQL database
+            com.dsl.simulator.Entity.Satellite dbSatellite = com.dsl.simulator.Entity.Satellite.builder()
+                    .satelliteId(satelliteId)
+                    .name(deployedSat.getSatelliteName() != null ? deployedSat.getSatelliteName() : satelliteId)
+                    .noradId(noradId)
+                    .tleLine1(deployedSat.getTleLine1())
+                    .tleLine2(deployedSat.getTleLine2())
+                    .latitude(deployedSat.getLatitude())
+                    .longitude(deployedSat.getLongitude())
+                    .altitude(deployedSat.getAltitude())
+                    .status("OPERATIONAL")
+                    .build();
+
+            satelliteRepository.save(dbSatellite);
+
+            logs.add("✅ DEPLOYED (physics): " + satelliteId + " | NORAD: " + noradId);
+            logs.add("📡 TLE fetched from CELESTRAK");
+            logs.add("💾 Saved to database");
+
+        } catch (Exception e) {
+            logs.add("❌ Deployment failed: " + e.getMessage());
+            e.printStackTrace();
         }
+
         return null;
     }
 
-    @Override
-    public Void visitDeployGroundStationStatement(SatOpsParser.DeployGroundStationStatementContext ctx) {
-        String gsId = ctx.ID().getText();
-        double lat = Double.parseDouble(ctx.NUMBER(0).getText());
-        double lon = Double.parseDouble(ctx.NUMBER(1).getText());
-        GroundStation gs = missionControlService.deployGroundStation(gsId, lat, lon);
-        logs.add("✓ GROUND STATION DEPLOYED: " + gs.getName() +
-                String.format(" (%.4f°, %.4f°)", lat, lon));
-        return null;
-    }
+
 
     @Override
     public Void visitMoveStatement(SatOpsParser.MoveStatementContext ctx) {

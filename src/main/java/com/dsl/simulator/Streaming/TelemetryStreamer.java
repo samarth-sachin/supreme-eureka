@@ -1,10 +1,11 @@
 package com.dsl.simulator.Streaming;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
-import lombok.RequiredArgsConstructor;
 
 import java.time.Instant;
 import java.util.Map;
@@ -15,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
+@ConditionalOnProperty(name = "spring.kafka.enabled", havingValue = "true", matchIfMissing = false)
 public class TelemetryStreamer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
@@ -28,10 +29,20 @@ public class TelemetryStreamer {
     private static final String COMMANDS_TOPIC = "satellite-commands";
     private static final String MISSION_UPDATES_TOPIC = "mission-updates";
 
+    // Manual constructor with optional KafkaTemplate
+    @Autowired(required = false)
+    public TelemetryStreamer(KafkaTemplate<String, Object> kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
+
     /**
      * Start real-time telemetry streaming for a satellite
      */
     public String startTelemetryStream(String satelliteId) {
+        if (kafkaTemplate == null) {
+            return "❌ Kafka not enabled";
+        }
+
         if (activeStreams.getOrDefault(satelliteId, false)) {
             return "⚠️ Telemetry stream already active for " + satelliteId;
         }
@@ -39,7 +50,6 @@ public class TelemetryStreamer {
         activeStreams.put(satelliteId, true);
         log.info("📡 Starting telemetry stream for {}", satelliteId);
 
-        // Stream telemetry every 5 seconds
         scheduler.scheduleAtFixedRate(() -> {
             if (activeStreams.getOrDefault(satelliteId, false)) {
                 streamTelemetryData(satelliteId);
@@ -49,19 +59,15 @@ public class TelemetryStreamer {
         return "✅ Real-time telemetry streaming started for " + satelliteId;
     }
 
-    /**
-     * Stop telemetry streaming
-     */
     public String stopTelemetryStream(String satelliteId) {
         activeStreams.put(satelliteId, false);
         log.info("🛑 Stopping telemetry stream for {}", satelliteId);
         return "✅ Telemetry streaming stopped for " + satelliteId;
     }
 
-    /**
-     * Stream live telemetry data
-     */
     private void streamTelemetryData(String satelliteId) {
+        if (kafkaTemplate == null) return;
+
         try {
             TelemetryData telemetry = generateRealisticTelemetry(satelliteId);
 
@@ -74,7 +80,6 @@ public class TelemetryStreamer {
                         }
                     });
 
-            // Check for alerts
             checkAndStreamAlerts(satelliteId, telemetry);
 
         } catch (Exception e) {
@@ -82,38 +87,32 @@ public class TelemetryStreamer {
         }
     }
 
-    /**
-     * Generate realistic telemetry data
-     */
     private TelemetryData generateRealisticTelemetry(String satelliteId) {
         return TelemetryData.builder()
                 .satelliteId(satelliteId)
                 .timestamp(Instant.now())
-                .batteryLevel(85.0 + Math.random() * 10 - 5) // 80-90%
-                .powerGeneration(200 + Math.random() * 100) // 200-300W
-                .fuelLevel(70.0 + Math.random() * 20) // 70-90%
-                .temperature(20 + Math.random() * 30 - 15) // 5-35°C
+                .batteryLevel(85.0 + Math.random() * 10 - 5)
+                .powerGeneration(200 + Math.random() * 100)
+                .fuelLevel(70.0 + Math.random() * 20)
+                .temperature(20 + Math.random() * 30 - 15)
                 .position(generateOrbitPosition())
                 .velocity(generateOrbitVelocity())
                 .attitude(generateAttitudeData())
                 .systemStatus(generateSystemStatus())
-                .dataRate(1000 + Math.random() * 5000) // 1-6 Mbps
-                .signalStrength(-65 - Math.random() * 20) // -65 to -85 dBm
+                .dataRate(1000 + Math.random() * 5000)
+                .signalStrength(-65 - Math.random() * 20)
                 .build();
     }
 
-    /**
-     * Check telemetry for alerts and stream them
-     */
     private void checkAndStreamAlerts(String satelliteId, TelemetryData telemetry) {
-        // Battery level alert
+        if (kafkaTemplate == null) return;
+
         if (telemetry.getBatteryLevel() < 20) {
             streamAlert(satelliteId, SatelliteAlert.AlertLevel.CRITICAL,
                     "Battery level critically low: " + String.format("%.1f%%", telemetry.getBatteryLevel()),
                     Map.of("batteryLevel", telemetry.getBatteryLevel()));
         }
 
-        // Temperature alert
         if (telemetry.getTemperature() > 60 || telemetry.getTemperature() < -20) {
             streamAlert(satelliteId, SatelliteAlert.AlertLevel.WARNING,
                     "Temperature out of normal range: " + String.format("%.1f°C", telemetry.getTemperature()),
@@ -121,10 +120,9 @@ public class TelemetryStreamer {
         }
     }
 
-    /**
-     * Stream alert to Kafka
-     */
     public void streamAlert(String satelliteId, SatelliteAlert.AlertLevel level, String message, Map<String, Object> metadata) {
+        if (kafkaTemplate == null) return;
+
         SatelliteAlert alert = SatelliteAlert.builder()
                 .alertId("ALERT-" + System.currentTimeMillis())
                 .satelliteId(satelliteId)
@@ -141,11 +139,10 @@ public class TelemetryStreamer {
         log.info("🚨 {} alert streamed for {}: {}", level, satelliteId, message);
     }
 
-    /**
-     * Stream mission updates
-     */
     public void streamMissionUpdate(String missionId, MissionUpdate.MissionStatus status,
                                     String details, double completionPercentage) {
+        if (kafkaTemplate == null) return;
+
         MissionUpdate update = MissionUpdate.builder()
                 .missionId(missionId)
                 .missionName("Mission-" + missionId)
@@ -160,23 +157,18 @@ public class TelemetryStreamer {
         log.info("📋 Mission update streamed for {}: {}% complete", missionId, completionPercentage);
     }
 
-    /**
-     * Listen to incoming commands
-     */
     @KafkaListener(topics = COMMANDS_TOPIC, groupId = "mission-control")
     public void handleIncomingCommand(SatelliteCommand command) {
+        if (kafkaTemplate == null) return;
+
         log.info("⚡ Received command for {}: {}", command.getSatelliteId(), command.getCommandType());
-
-        // Process command and send result
         CommandResult result = processCommand(command);
-
         kafkaTemplate.send("command-results", command.getSatelliteId(), result);
     }
 
-    // Helper methods
     private PositionData generateOrbitPosition() {
         return PositionData.builder()
-                .x(-4000 + Math.random() * 8000) // LEO orbit range
+                .x(-4000 + Math.random() * 8000)
                 .y(-4000 + Math.random() * 8000)
                 .z(-2000 + Math.random() * 4000)
                 .build();
@@ -184,7 +176,7 @@ public class TelemetryStreamer {
 
     private VelocityData generateOrbitVelocity() {
         return VelocityData.builder()
-                .vx(-4 + Math.random() * 8) // km/s
+                .vx(-4 + Math.random() * 8)
                 .vy(-4 + Math.random() * 8)
                 .vz(-2 + Math.random() * 4)
                 .build();
@@ -200,17 +192,16 @@ public class TelemetryStreamer {
 
     private SystemStatus generateSystemStatus() {
         return SystemStatus.builder()
-                .communicationSystem(Math.random() > 0.05) // 95% uptime
-                .powerSystem(Math.random() > 0.02) // 98% uptime
-                .propulsionSystem(Math.random() > 0.1) // 90% uptime
-                .payloadSystem(Math.random() > 0.08) // 92% uptime
-                .attitudeControlSystem(Math.random() > 0.03) // 97% uptime
+                .communicationSystem(Math.random() > 0.05)
+                .powerSystem(Math.random() > 0.02)
+                .propulsionSystem(Math.random() > 0.1)
+                .payloadSystem(Math.random() > 0.08)
+                .attitudeControlSystem(Math.random() > 0.03)
                 .build();
     }
 
     private CommandResult processCommand(SatelliteCommand command) {
-        // Simulate command processing
-        boolean success = Math.random() > 0.05; // 95% success rate
+        boolean success = Math.random() > 0.05;
 
         return CommandResult.builder()
                 .commandId(command.getCommandId())
